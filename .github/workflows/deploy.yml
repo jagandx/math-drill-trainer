@@ -19,16 +19,21 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
 
       - name: Build
-        run: npm run build -- --base-href /math-drill-trainer/
+        run: npx ng build --base-href /math-drill-trainer/
 
-      - name: Deploy to GitHub Pages
-        uses: angular-cli-ghpages/actions@main
+      - name: List dist folder
+        run: ls -la dist/math-drill-trainer/
+
+      - name: Deploy to gh-pages
+        uses: JamesIves/github-pages-deploy-action@v4
         with:
-          dist-folder: dist/math-drill-trainer/browser
+          folder: dist/math-drill-trainer/browser
+          branch: gh-pages
+          clean: true
