@@ -21,21 +21,21 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/summary/summary.component').then(m => m.SummaryComponent),
   },
-//   {
-//     path: 'progress',
-//     loadComponent: () =>
-//       import('./features/progress/progress.component').then(m => m.ProgressComponent),
-//   },
-//   {
-//     path: 'parent',
-//     loadComponent: () =>
-//       import('./features/parent/parent.component').then(m => m.ParentComponent),
-//   },
-//   {
-//     path: 'settings',
-//     loadComponent: () =>
-//       import('./features/settings/settings.component').then(m => m.SettingsComponent),
-//   },
+  {
+    path: 'progress',
+    loadComponent: () =>
+      import('./features/progress/progress.component').then(m => m.ProgressComponent),
+  },
+  {
+    path: 'parent',
+    loadComponent: () =>
+      import('./features/parent/parent.component').then(m => m.ParentComponent),
+  },
+  {
+    path: 'settings',
+    loadComponent: () =>
+      import('./features/settings/settings.component').then(m => m.SettingsComponent),
+  },
   {
     path: '**',
     redirectTo: 'home',

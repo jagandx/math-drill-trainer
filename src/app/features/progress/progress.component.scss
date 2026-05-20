@@ -1,0 +1,97 @@
+.progress-page { display: flex; flex-direction: column; gap: 14px; }
+
+.stats-row {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+  .stat-card {
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: var(--radius-md); padding: 12px; text-align: center;
+  }
+  .stat-val { font-size: 20px; font-weight: 500; }
+  .stat-lbl { font-size: 11px; color: var(--text-sec); margin-top: 2px; }
+}
+
+.card h3 { font-size: 14px; font-weight: 500; margin-bottom: 12px; }
+
+// Level journey
+.level-journey {
+  display: flex; align-items: flex-start; gap: 0; overflow-x: auto; padding-bottom: 4px;
+}
+.level-step {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 4px; min-width: 72px; text-align: center;
+
+  &.locked .level-circle { opacity: 0.5; }
+  &.current .level-circle { box-shadow: 0 0 0 3px #fff, 0 0 0 5px currentColor; }
+}
+.level-circle {
+  width: 40px; height: 40px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; font-weight: 500; color: #fff;
+  transition: all .2s;
+}
+.level-name { font-size: 11px; font-weight: 500; color: var(--text-pri); }
+.level-sub  { font-size: 10px; color: var(--text-sec); }
+.pass-bar-wrap {
+  width: 60px; height: 4px; background: var(--border);
+  border-radius: 2px; overflow: hidden; margin-top: 2px;
+}
+.pass-bar   { height: 100%; border-radius: 2px; transition: width .3s; }
+.pass-label { font-size: 10px; color: var(--text-ter); }
+.level-connector {
+  flex: 1; height: 2px; margin-top: 20px; min-width: 16px;
+  transition: background .3s;
+}
+
+// Weak spots
+.weak-list  { display: flex; flex-direction: column; gap: 6px; }
+.weak-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 0; border-bottom: 1px solid var(--border);
+  &:last-child { border-bottom: none; }
+  .weak-label  { flex: 1; font-size: 13px; }
+  .weak-errors { font-size: 12px; color: var(--coral); font-weight: 500; }
+  .weak-time   { font-size: 12px; color: var(--text-sec); min-width: 50px; text-align: right; }
+}
+
+// Badges
+.badges-row {
+  display: flex; flex-wrap: wrap; gap: 10px;
+}
+.badge-card {
+  background: var(--amber-l); border: 1px solid #EF9F2766;
+  border-radius: var(--radius-md); padding: 10px 14px; text-align: center;
+  min-width: 80px;
+  .badge-icon  { font-size: 24px; }
+  .badge-label { font-size: 11px; font-weight: 500; color: var(--amber); margin-top: 4px; }
+  .badge-date  { font-size: 10px; color: var(--text-ter); margin-top: 2px; }
+}
+
+// Table
+.table-wrap { overflow-x: auto; }
+.session-table {
+  width: 100%; border-collapse: collapse; font-size: 12px;
+  th {
+    text-align: left; padding: 8px 6px;
+    border-bottom: 1px solid var(--border);
+    font-size: 11px; font-weight: 500; color: var(--text-sec);
+  }
+  td { padding: 8px 6px; border-bottom: 1px solid var(--border); }
+  tr:last-child td { border-bottom: none; }
+  .pass-row { background: #EAF3DE22; }
+  .fail-row { background: #FAECE722; }
+  .lvl-pill {
+    padding: 2px 8px; border-radius: 20px;
+    font-size: 11px; font-weight: 500;
+  }
+  .score-cell {
+    font-weight: 500;
+    &.pass { color: var(--green); }
+    &.fail { color: var(--coral); }
+  }
+}
+
+.empty-state {
+  text-align: center; padding: 32px;
+  .empty-icon { font-size: 36px; margin-bottom: 8px; }
+  p { color: var(--text-sec); font-size: 14px; }
+}
