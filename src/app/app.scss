@@ -1,0 +1,41 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--bg);
+}
+
+.nav {
+  display: flex;
+  gap: 4px;
+  padding: 10px 16px;
+  background: #fff;
+  border-bottom: 1px solid #eee;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #5f5e5a;
+    text-decoration: none;
+    transition: all 0.15s;
+
+    &:hover  { background: #f5f4f0; color: #2c2c2a; }
+    &.active { background: #EEEDFE; color: #534AB7; }
+  }
+}
+
+.main-content {
+  flex: 1;
+  max-width: 640px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 20px 16px 40px;
+}

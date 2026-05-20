@@ -1,0 +1,79 @@
+<div class="drill">
+
+  <!-- Config bar -->
+  <div class="config-bar">
+    <span class="level-pill">Level {{ level }}</span>
+    <div class="q-count">
+      <span class="cfg-lbl">Questions:</span>
+      @for (n of [5, 10, 20]; track n) {
+        <button class="pill"
+          [class.active]="totalQuestions === n"
+          [disabled]="phase() === 'running'"
+          (click)="totalQuestions = n">{{ n }}</button>
+      }
+    </div>
+  </div>
+
+  <!-- Live stats -->
+  <div class="live-stats">
+    <div class="ls-card"><div class="ls-val">{{ liveCorrect() }}</div><div class="ls-lbl">Correct</div></div>
+    <div class="ls-card"><div class="ls-val">{{ liveStreak() }}</div><div class="ls-lbl">Streak</div></div>
+    <div class="ls-card"><div class="ls-val">{{ qIndex() }}/{{ totalQuestions }}</div><div class="ls-lbl">Progress</div></div>
+  </div>
+
+  <!-- Drill card -->
+  <div class="drill-card card">
+
+    <!-- IDLE -->
+    @if (phase() === 'idle') {
+      <div class="idle-state">
+        <div class="idle-icon">⚡</div>
+        <p>Ready for Level {{ level }} — {{ drillType }} drill</p>
+        <button class="btn btn-primary" (click)="start()">▶ Start</button>
+      </div>
+    }
+
+    <!-- RUNNING -->
+    @if (phase() === 'running') {
+      <div class="q-label">Question {{ qIndex() + 1 }} of {{ totalQuestions }}</div>
+      <div class="q-text">{{ currentQ()?.display }}</div>
+
+      <!-- Timer bar -->
+      <div class="timer-wrap">
+        <div class="timer-bg">
+          <div class="timer-fill"
+            [style.width.%]="timerPct()"
+            [style.background]="timerColor">
+          </div>
+        </div>
+      </div>
+
+      <!-- Answer -->
+      <div class="ans-row">
+        <input type="number" [(ngModel)]="userAnswer"
+               (keydown)="onKeydown($event)"
+               class="ans-input" placeholder="?" autofocus />
+        <button class="btn btn-primary" (click)="submit()">✓</button>
+      </div>
+
+      <!-- Feedback -->
+      @if (feedback()) {
+        <div class="feedback" [class]="feedback()">
+          @if (feedback() === 'correct') { <span>✓ Correct!</span> }
+          @if (feedback() === 'wrong')   { <span>✗ Wrong — {{ currentQ()?.answer }}</span> }
+          @if (feedback() === 'timeout') { <span>⏱ Time up — {{ currentQ()?.answer }}</span> }
+        </div>
+      }
+
+      <button class="btn btn-danger stop-btn" (click)="stop()">⏹ Stop session</button>
+    }
+
+    <!-- FINISHED (brief flash before redirect) -->
+    @if (phase() === 'finished') {
+      <div class="idle-state">
+        <div class="idle-icon">🎉</div>
+        <p>Saving results...</p>
+      </div>
+    }
+  </div>
+</div>

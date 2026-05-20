@@ -1,0 +1,80 @@
+<div class="home">
+
+  <!-- Name setup -->
+  @if (!student?.name) {
+    <div class="card setup-card">
+      <h2>👋 Welcome!</h2>
+      <p>What's your name?</p>
+      <div class="name-row">
+        <input [(ngModel)]="nameInput" placeholder="Enter your name"
+               (keydown.enter)="saveName()" class="name-input" autofocus />
+        <button class="btn btn-primary" (click)="saveName()">Let's go →</button>
+      </div>
+    </div>
+  }
+
+  <!-- Student header -->
+  @if (student?.name) {
+    <div class="header">
+      <div class="greet">
+        <span class="hi">Hi, {{ student?.name }}! 👋</span>
+        <span class="streak">🔥 {{ student?.dailyStreak }}-day streak</span>
+      </div>
+      <div class="level-badge" [style.background]="currentLevel?.color + '22'"
+           [style.color]="currentLevel?.color" [style.border-color]="currentLevel?.color + '55'">
+        Level {{ currentLevel?.level }} — {{ currentLevel?.name }}
+      </div>
+    </div>
+
+    <!-- Quick stats -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-val">{{ student?.totalSessions }}</div>
+        <div class="stat-lbl">Sessions</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val">{{ student?.totalCorrect }}</div>
+        <div class="stat-lbl">Total correct</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val">{{ student?.consecutivePassCount }}/2</div>
+        <div class="stat-lbl">Pass streak</div>
+      </div>
+    </div>
+
+    <!-- Start drill -->
+    <div class="card drill-card">
+      <h3>Start a drill</h3>
+      <p class="drill-desc">{{ currentLevel?.description }}</p>
+      <button class="btn btn-primary start-btn" (click)="startDrill('mixed')">
+        ⚡ Start Level {{ currentLevel?.level }} Drill
+      </button>
+      <div class="drill-types">
+        @for (type of currentLevel?.drillTypes ?? []; track type) {
+          <button class="btn type-btn" (click)="startDrill(type)">{{ type }}</button>
+        }
+      </div>
+    </div>
+
+    <!-- Recent sessions -->
+    @if (recentSessions.length > 0) {
+      <div class="card">
+        <h3>Recent sessions</h3>
+        <div class="sessions-list">
+          @for (s of recentSessions; track s.id) {
+            <div class="session-row">
+              <span class="s-date">{{ s.date }}</span>
+              <span class="s-type">{{ s.drillType }}</span>
+              <span class="s-score"
+                [class.pass]="s.score >= 8"
+                [class.fail]="s.score < 8">
+                {{ s.score }}/{{ s.total }}
+              </span>
+              <span class="s-acc">{{ s.accuracy }}%</span>
+            </div>
+          }
+        </div>
+      </div>
+    }
+  }
+</div>

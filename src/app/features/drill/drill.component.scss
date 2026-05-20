@@ -1,0 +1,61 @@
+.drill { display: flex; flex-direction: column; gap: 14px; }
+
+.config-bar {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  .level-pill {
+    background: var(--purple-l); color: var(--purple);
+    padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500;
+  }
+  .cfg-lbl { font-size: 12px; color: var(--text-sec); }
+  .q-count { display: flex; align-items: center; gap: 6px; }
+  .pill {
+    padding: 4px 12px; border-radius: 20px; border: 1px solid var(--border);
+    background: #fff; font-size: 12px; cursor: pointer;
+    &.active { background: var(--purple-l); color: var(--purple); border-color: var(--purple); }
+    &:disabled { opacity: 0.5; cursor: not-allowed; }
+  }
+}
+
+.live-stats {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+  .ls-card {
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: var(--radius-md); padding: 10px; text-align: center;
+  }
+  .ls-val { font-size: 22px; font-weight: 500; }
+  .ls-lbl { font-size: 12px; color: var(--text-sec); margin-top: 2px; }
+}
+
+.drill-card { text-align: center; min-height: 280px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; }
+
+.idle-state {
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+  .idle-icon { font-size: 36px; }
+  p { font-size: 14px; color: var(--text-sec); }
+  .btn { padding: 12px 32px; font-size: 16px; }
+}
+
+.q-label { font-size: 12px; color: var(--text-ter); text-transform: uppercase; letter-spacing: .5px; }
+.q-text  { font-size: 44px; font-weight: 500; letter-spacing: 2px; min-height: 58px; }
+
+.timer-wrap { width: 100%; max-width: 320px; }
+.timer-bg   { height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.timer-fill { height: 100%; border-radius: 3px; transition: width 0.08s linear; }
+
+.ans-row {
+  display: flex; gap: 8px; align-items: center;
+  .ans-input {
+    width: 120px; text-align: center; font-size: 24px; font-weight: 500;
+    padding: 8px; border-radius: var(--radius-md); border: 1px solid var(--border);
+    &:focus { outline: 2px solid var(--purple); }
+  }
+}
+
+.feedback {
+  font-size: 15px; font-weight: 500; min-height: 24px;
+  &.correct { color: var(--green); }
+  &.wrong   { color: var(--coral); }
+  &.timeout { color: var(--amber); }
+}
+
+.stop-btn { margin-top: 8px; font-size: 12px; padding: 6px 16px; }

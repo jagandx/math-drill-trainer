@@ -1,0 +1,80 @@
+<div class="summary">
+  @if (session()) {
+
+    <!-- Result header -->
+    <div class="result-header card" [class.pass]="passed" [class.fail]="!passed">
+      <div class="result-icon">{{ passed ? '🎉' : '💪' }}</div>
+      <div class="result-title">{{ passed ? 'Well done!' : 'Keep practising!' }}</div>
+      <div class="result-score">{{ session()?.score }}/{{ session()?.total }}</div>
+      @if (leveledUp()) {
+        <div class="level-up">🏆 Level {{ student()?.currentLevel }} Unlocked!</div>
+      }
+    </div>
+
+    <!-- Stats grid -->
+    <div class="stats-grid">
+      <div class="s-card">
+        <div class="s-val" [style.color]="accuracyColor">{{ session()?.accuracy }}%</div>
+        <div class="s-lbl">Accuracy</div>
+      </div>
+      <div class="s-card">
+        <div class="s-val">{{ session()?.avgTimeSec }}s</div>
+        <div class="s-lbl">Avg time</div>
+      </div>
+      <div class="s-card">
+        <div class="s-val">{{ session()?.bestStreakInSession }}</div>
+        <div class="s-lbl">Best streak</div>
+      </div>
+      <div class="s-card">
+        <div class="s-val">{{ student()?.dailyStreak }}🔥</div>
+        <div class="s-lbl">Day streak</div>
+      </div>
+    </div>
+
+    <!-- Accuracy bar -->
+    <div class="card">
+      <div class="bar-label">
+        <span>Accuracy</span><span>{{ session()?.accuracy }}%</span>
+      </div>
+      <div class="bar-bg">
+        <div class="bar-fill" [style.width.%]="session()?.accuracy"
+             [style.background]="accuracyColor"></div>
+      </div>
+
+      <div class="bar-label" style="margin-top:10px">
+        <span>Pass progress</span>
+        <span>{{ student()?.consecutivePassCount }}/2 sessions</span>
+      </div>
+      <div class="bar-bg">
+        <div class="bar-fill"
+          [style.width.%]="(student()?.consecutivePassCount ?? 0) * 50"
+          style="background: var(--teal)"></div>
+      </div>
+    </div>
+
+    <!-- Question log -->
+    <div class="card">
+      <h3>Question log</h3>
+      <div class="q-log">
+        @for (q of session()?.questions; track $index) {
+          <div class="q-row" [class.ok]="q.correct" [class.no]="!q.correct">
+            <span class="q-dot">{{ q.correct ? '✓' : '✗' }}</span>
+            <span class="q-text">{{ q.question }}</span>
+            <span class="q-ans">
+              @if (!q.correct) { <span class="wrong-ans">{{ q.userAnswer ?? '—' }} → </span> }
+              {{ q.expected }}
+            </span>
+            <span class="q-time">{{ q.timeSec }}s</span>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="actions">
+      <button class="btn btn-primary" (click)="tryAgain()">↺ Try again</button>
+      <button class="btn" (click)="goProgress()">📈 Progress</button>
+      <button class="btn" (click)="goHome()">🏠 Home</button>
+    </div>
+  }
+</div>
