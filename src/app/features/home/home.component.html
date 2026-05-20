@@ -1,13 +1,17 @@
 <div class="home">
-
   <!-- Name setup -->
   @if (!student?.name) {
     <div class="card setup-card">
       <h2>👋 Welcome!</h2>
       <p>What's your name?</p>
       <div class="name-row">
-        <input [(ngModel)]="nameInput" placeholder="Enter your name"
-               (keydown.enter)="saveName()" class="name-input" autofocus />
+        <input
+          [(ngModel)]="nameInput"
+          placeholder="Enter your name"
+          (keydown.enter)="saveName()"
+          class="name-input"
+          autofocus
+        />
         <button class="btn btn-primary" (click)="saveName()">Let's go →</button>
       </div>
     </div>
@@ -20,8 +24,12 @@
         <span class="hi">Hi, {{ student?.name }}! 👋</span>
         <span class="streak">🔥 {{ student?.dailyStreak }}-day streak</span>
       </div>
-      <div class="level-badge" [style.background]="currentLevel?.color + '22'"
-           [style.color]="currentLevel?.color" [style.border-color]="currentLevel?.color + '55'">
+      <div
+        class="level-badge"
+        [style.background]="currentLevel?.color + '22'"
+        [style.color]="currentLevel?.color"
+        [style.border-color]="currentLevel?.color + '55'"
+      >
         Level {{ currentLevel?.level }} — {{ currentLevel?.name }}
       </div>
     </div>
@@ -51,7 +59,9 @@
       </button>
       <div class="drill-types">
         @for (type of currentLevel?.drillTypes ?? []; track type) {
-          <button class="btn type-btn" (click)="startDrill(type)">{{ type }}</button>
+          <button class="btn type-btn" (click)="startDrill(type)">
+            {{ drillLabel(type) }}
+          </button>
         }
       </div>
     </div>
@@ -65,9 +75,7 @@
             <div class="session-row">
               <span class="s-date">{{ s.date }}</span>
               <span class="s-type">{{ s.drillType }}</span>
-              <span class="s-score"
-                [class.pass]="s.score >= 8"
-                [class.fail]="s.score < 8">
+              <span class="s-score" [class.pass]="s.score >= 8" [class.fail]="s.score < 8">
                 {{ s.score }}/{{ s.total }}
               </span>
               <span class="s-acc">{{ s.accuracy }}%</span>

@@ -3,7 +3,14 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { DrillEngineService } from '../../core/drill-engine.service';
 import { StorageService } from '../../core/storage.service';
 import { FormsModule } from '@angular/forms';
-import { Question, QuestionResult, Session, DrillType, DrillLevel, LEVELS } from '../../core/models';
+import {
+  Question,
+  QuestionResult,
+  Session,
+  DrillType,
+  DrillLevel,
+  LEVELS,
+} from '../../core/models';
 
 @Component({
   selector: 'app-drill',
@@ -17,18 +24,18 @@ export class DrillComponent implements OnInit, OnDestroy {
   drillType: DrillType | 'mixed' = 'mixed';
   level: DrillLevel = 1;
   totalQuestions = 10;
-  timeLimitSec   = 10;
+  timeLimitSec = 10;
 
   // State
   phase = signal<'idle' | 'running' | 'finished'>('idle');
-  currentQ    = signal<Question | null>(null);
-  qIndex      = signal(0);
-  userAnswer  = '';
-  feedback    = signal<'correct' | 'wrong' | 'timeout' | null>(null);
-  timerPct    = signal(100);
+  currentQ = signal<Question | null>(null);
+  qIndex = signal(0);
+  userAnswer = '';
+  feedback = signal<'correct' | 'wrong' | 'timeout' | null>(null);
+  timerPct = signal(100);
   liveCorrect = signal(0);
-  liveStreak  = signal(0);
-  bestStreak  = 0;
+  liveStreak = signal(0);
+  bestStreak = 0;
   currentStreak = 0;
 
   private results: QuestionResult[] = [];
@@ -43,15 +50,17 @@ export class DrillComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit() {
-    this.route.queryParams.subscribe(p => {
-      this.drillType    = (p['type'] as DrillType) ?? 'mixed';
-      this.level        = (parseInt(p['level']) as DrillLevel) ?? 1;
-      const levelDef    = LEVELS.find(l => l.level === this.level);
+    this.route.queryParams.subscribe((p) => {
+      this.drillType = (p['type'] as DrillType) ?? 'mixed';
+      this.level = (parseInt(p['level']) as DrillLevel) ?? 1;
+      const levelDef = LEVELS.find((l) => l.level === this.level);
       this.timeLimitSec = levelDef?.timeLimitSeconds ?? 10;
     });
   }
 
-  ngOnDestroy() { this.clearTimer(); }
+  ngOnDestroy() {
+    this.clearTimer();
+  }
 
   start() {
     this.results = [];
@@ -71,13 +80,21 @@ export class DrillComponent implements OnInit, OnDestroy {
   }
 
   private nextQuestion() {
-    if (this.qIndex() >= this.totalQuestions) { this.finish(); return; }
-    const q = this.engine.generate(
-      this.drillType === 'mixed'
-        ? (LEVELS.find(l => l.level === this.level)?.drillTypes[
-            Math.floor(Math.random() * 4)] ?? 'add1')
-        : this.drillType
-    );
+    if (this.qIndex() >= this.totalQuestions) {
+      this.finish();
+      return;
+    }
+
+    let type: DrillType;
+    if (this.drillType === 'mixed') {
+      const levelDef = LEVELS.find((l) => l.level === this.level);
+      const types = levelDef?.drillTypes ?? ['add1'];
+      type = types[Math.floor(Math.random() * types.length)];
+    } else {
+      type = this.drillType as DrillType;
+    }
+
+    const q = this.engine.generate(type);
     this.currentQ.set(q);
     this.userAnswer = '';
     this.feedback.set(null);
@@ -92,7 +109,10 @@ export class DrillComponent implements OnInit, OnDestroy {
       const elapsed = (Date.now() - this.qStart) / 1000;
       const pct = Math.max(0, 100 - (elapsed / this.timeLimitSec) * 100);
       this.timerPct.set(pct);
-      if (elapsed >= this.timeLimitSec) { this.clearTimer(); this.timeUp(); }
+      if (elapsed >= this.timeLimitSec) {
+        this.clearTimer();
+        this.timeUp();
+      }
     }, 80);
   }
 
@@ -117,14 +137,20 @@ export class DrillComponent implements OnInit, OnDestroy {
   }
 
   private advance() {
-    this.qIndex.update(i => i + 1);
+    this.qIndex.update((i) => i + 1);
     if (this.qIndex() < this.totalQuestions) this.nextQuestion();
     else this.finish();
   }
 
-  private recordResult(q: Question, userAnswer: number | null, correct: boolean, timeSec: number, timedOut: boolean) {
+  private recordResult(
+    q: Question,
+    userAnswer: number | null,
+    correct: boolean,
+    timeSec: number,
+    timedOut: boolean,
+  ) {
     if (correct) {
-      this.liveCorrect.update(c => c + 1);
+      this.liveCorrect.update((c) => c + 1);
       this.currentStreak++;
       if (this.currentStreak > this.bestStreak) this.bestStreak = this.currentStreak;
       this.liveStreak.set(this.currentStreak);
@@ -133,37 +159,47 @@ export class DrillComponent implements OnInit, OnDestroy {
       this.liveStreak.set(0);
     }
     this.results.push({
-      question: q.display, expected: q.answer,
-      userAnswer, correct, timeSec, timedOut, drillType: q.drillType,
+      question: q.display,
+      expected: q.answer,
+      userAnswer,
+      correct,
+      timeSec,
+      timedOut,
+      drillType: q.drillType,
     });
   }
 
   private finish() {
     this.clearTimer();
     this.phase.set('finished');
-    const score    = this.results.filter(r => r.correct).length;
-    const total    = this.results.length;
+    const score = this.results.filter((r) => r.correct).length;
+    const total = this.results.length;
     const accuracy = Math.round((score / total) * 100);
-    const avgTime  = parseFloat(
-      (this.results.reduce((s, r) => s + r.timeSec, 0) / total).toFixed(1)
+    const avgTime = parseFloat(
+      (this.results.reduce((s, r) => s + r.timeSec, 0) / total).toFixed(1),
     );
     const session: Session = {
-      id:      `${Date.now()}`,
-      date:    new Date().toISOString().split('T')[0],
-      level:   this.level,
+      id: `${Date.now()}`,
+      date: new Date().toISOString().split('T')[0],
+      level: this.level,
       drillType: this.drillType,
-      score, total, accuracy, avgTimeSec: avgTime,
+      score,
+      total,
+      accuracy,
+      avgTimeSec: avgTime,
       bestStreakInSession: this.bestStreak,
       timeLimitSec: this.timeLimitSec,
       questions: this.results,
     };
     const newState = this.storage.saveSession(session);
     this.router.navigate(['/summary'], {
-      state: { session, student: newState.student }
+      state: { session, student: newState.student },
     });
   }
 
-  private clearTimer() { clearInterval(this.timerInt); }
+  private clearTimer() {
+    clearInterval(this.timerInt);
+  }
 
   get timerColor(): string {
     const p = this.timerPct();

@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { StorageService } from '../../core/storage.service';
 import { AppState, LEVELS, DrillType } from '../../core/models';
+import { DRILL_LABELS } from '../../core/models';
 
 @Component({
   selector: 'app-home',
@@ -12,11 +13,14 @@ import { AppState, LEVELS, DrillType } from '../../core/models';
   styleUrl: './home.component.scss',
 })
 export class HomeComponent implements OnInit {
-  state   = signal<AppState | null>(null);
+  state = signal<AppState | null>(null);
   nameInput = '';
-  levels  = LEVELS;
+  levels = LEVELS;
 
-  constructor(private storage: StorageService, private router: Router) {}
+  constructor(
+    private storage: StorageService,
+    private router: Router,
+  ) {}
 
   ngOnInit() {
     const s = this.storage.load();
@@ -24,8 +28,16 @@ export class HomeComponent implements OnInit {
     this.nameInput = s.student.name;
   }
 
-  get student()      { return this.state()?.student; }
-  get currentLevel() { return LEVELS.find(l => l.level === this.student?.currentLevel); }
+  drillLabel(type: string): string {
+    return DRILL_LABELS[type as DrillType] ?? type;
+  }
+
+  get student() {
+    return this.state()?.student;
+  }
+  get currentLevel() {
+    return LEVELS.find((l) => l.level === this.student?.currentLevel);
+  }
   get recentSessions() {
     return (this.state()?.sessions ?? []).slice(-5).reverse();
   }
@@ -39,7 +51,7 @@ export class HomeComponent implements OnInit {
 
   startDrill(drillType: DrillType | 'mixed' = 'mixed') {
     this.router.navigate(['/drill'], {
-      queryParams: { type: drillType, level: this.student?.currentLevel ?? 1 }
+      queryParams: { type: drillType, level: this.student?.currentLevel ?? 1 },
     });
   }
 }
