@@ -1,71 +1,74 @@
 <div class="progress-page">
 
-  <!-- Header stats -->
+  <!-- Stats row -->
   <div class="stats-row">
-    <div class="stat-card">
-      <div class="stat-val">{{ student?.totalSessions }}</div>
-      <div class="stat-lbl">Total sessions</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-val">{{ totalAccuracy }}%</div>
-      <div class="stat-lbl">Avg accuracy</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-val">{{ bestScore }}/10</div>
-      <div class="stat-lbl">Best score</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-val">{{ student?.dailyStreak }}🔥</div>
-      <div class="stat-lbl">Day streak</div>
-    </div>
+    <div class="stat-card"><div class="stat-val">{{ student?.totalSessions }}</div><div class="stat-lbl">Sessions</div></div>
+    <div class="stat-card"><div class="stat-val">{{ totalAccuracy }}%</div><div class="stat-lbl">Avg accuracy</div></div>
+    <div class="stat-card"><div class="stat-val">{{ bestScore }}/10</div><div class="stat-lbl">Best score</div></div>
+    <div class="stat-card"><div class="stat-val">{{ student?.dailyStreak }}🔥</div><div class="stat-lbl">Streak</div></div>
   </div>
 
-  <!-- Level journey -->
+  <!-- Section journey -->
   <div class="card">
-    <h3>Level journey</h3>
-    <div class="level-journey">
-      @for (lvl of levels; track lvl.level) {
-        <div class="level-step"
-          [class.unlocked]="isUnlocked(lvl.level)"
-          [class.current]="isCurrent(lvl.level)"
-          [class.locked]="!isUnlocked(lvl.level)">
-          <div class="level-circle"
-            [style.background]="isUnlocked(lvl.level) ? lvl.color : '#E8E6E0'"
-            [style.color]="isUnlocked(lvl.level) ? '#fff' : '#888780'">
-            {{ isUnlocked(lvl.level) ? lvl.level : '🔒' }}
+    <h3>Journey map</h3>
+    @for (sec of sections; track sec.id) {
+      <div class="sec-block" [class.locked]="!isSecUnlocked(sec.id)">
+        <div class="sec-head">
+          <div class="sec-icon"
+            [style.background]="isSecUnlocked(sec.id) ? sec.colorLight : '#F1EFE8'"
+            [style.color]="isSecUnlocked(sec.id) ? sec.color : '#888780'">
+            {{ sec.icon }}
           </div>
-          <div class="level-name">{{ lvl.name }}</div>
-          @if (isCurrent(lvl.level)) {
-            <div class="level-sub">Current</div>
-            <div class="pass-bar-wrap">
-              <div class="pass-bar"
-                [style.width.%]="levelProgress"
-                [style.background]="lvl.color">
-              </div>
-            </div>
-            <div class="pass-label">
-              {{ student?.consecutivePassCount }}/2 passes
-            </div>
-          }
+          <div class="sec-title-wrap">
+            <span class="sec-name">{{ sec.label }}</span>
+            @if (isSecComplete(sec.id)) {
+              <span class="sec-badge">✓ Complete</span>
+            } @else if (!isSecUnlocked(sec.id)) {
+              <span class="sec-locked">🔒 Locked</span>
+            }
+          </div>
         </div>
-        @if (lvl.level < 5) {
-          <div class="level-connector"
-            [style.background]="isUnlocked(lvl.level + 1) ? '#3B6D11' : '#E8E6E0'">
+        @if (isSecUnlocked(sec.id)) {
+          <div class="sl-steps">
+            @for (sl of subLevelsForSection(sec.id); track sl.id) {
+              <div class="sl-item"
+                [class.done]="slDone(sl.id)"
+                [class.active]="sl.id === student?.currentSubLevelId"
+                [class.locked]="!slUnlocked(sl.id)">
+                <div class="sl-dot">
+                  {{ slDone(sl.id) ? '✓' : sl.id }}
+                </div>
+                <div class="sl-info">
+                  <div class="sl-label">{{ sl.label }}</div>
+                  @if (slAttempts(sl.id) > 0) {
+                    <div class="sl-stats">
+                      {{ slAttempts(sl.id) }} attempt(s) · Best: {{ slBestAcc(sl.id) }}%
+                      @if (!slDone(sl.id)) {
+                        · Pass streak: {{ slPassStreak(sl.id) }}/{{ sl.passStreakRequired }}
+                      }
+                    </div>
+                  } @else if (slUnlocked(sl.id)) {
+                    <div class="sl-stats">Ready to attempt</div>
+                  } @else {
+                    <div class="sl-stats">Locked</div>
+                  }
+                </div>
+              </div>
+            }
           </div>
         }
-      }
-    </div>
+      </div>
+    }
   </div>
 
-  <!-- Accuracy chart -->
-  @if (sessions.length > 0) {
+  <!-- Charts -->
+  @if (sessions.length > 1) {
     <div class="card">
-      <h3>Accuracy — last {{ last10Sessions.length }} sessions</h3>
+      <h3>Accuracy — last {{ last10.length }} sessions</h3>
       <canvas #accuracyChart></canvas>
     </div>
-
     <div class="card">
-      <h3>Avg speed — last {{ last10Sessions.length }} sessions</h3>
+      <h3>Avg speed — last {{ last10.length }} sessions</h3>
       <canvas #speedChart></canvas>
     </div>
   }
@@ -73,23 +76,21 @@
   <!-- Weak spots -->
   @if (weakSpots.length > 0) {
     <div class="card">
-      <h3>⚠️ Weak spots — focus here</h3>
-      <div class="weak-list">
-        @for (w of weakSpots; track w.drillType) {
-          <div class="weak-row">
-            <span class="weak-label">{{ w.label }}</span>
-            <span class="weak-errors">{{ w.errorCount }} errors</span>
-            <span class="weak-time">{{ w.avgTimeSec }}s avg</span>
-          </div>
-        }
-      </div>
+      <h3>⚠️ Weak spots</h3>
+      @for (w of weakSpots; track w.drillType) {
+        <div class="weak-row">
+          <span class="weak-label">{{ w.label }}</span>
+          <span class="weak-errors">{{ w.errorCount }} errors</span>
+          <span class="weak-time">{{ w.avgTimeSec }}s avg</span>
+        </div>
+      }
     </div>
   }
 
   <!-- Badges -->
   @if (student?.badges?.length) {
     <div class="card">
-      <h3>🏅 Badges earned</h3>
+      <h3>🏅 Badges</h3>
       <div class="badges-row">
         @for (b of student?.badges ?? []; track b.id) {
           <div class="badge-card">
@@ -102,7 +103,7 @@
     </div>
   }
 
-  <!-- Session history table -->
+  <!-- Session table -->
   @if (sessions.length > 0) {
     <div class="card">
       <h3>Session history</h3>
@@ -110,33 +111,27 @@
         <table class="session-table">
           <thead>
             <tr>
-              <th>Date</th>
-              <th>Level</th>
-              <th>Type</th>
-              <th>Score</th>
-              <th>Accuracy</th>
-              <th>Avg time</th>
+              <th>Date</th><th>Sub-level</th><th>Score</th>
+              <th>Accuracy</th><th>Avg time</th><th>Passed</th>
             </tr>
           </thead>
           <tbody>
             @for (s of sessions.slice().reverse(); track s.id) {
-              <tr [class.pass-row]="s.score >= 8" [class.fail-row]="s.score < 8">
+              <tr [class.pass-row]="s.passed" [class.fail-row]="!s.passed">
                 <td>{{ s.date }}</td>
                 <td>
-                  <span class="lvl-pill"
-                    [style.background]="levelColor(s.level) + '22'"
-                    [style.color]="levelColor(s.level)">
-                    L{{ s.level }}
+                  <span class="sl-pill"
+                    [style.background]="sectionColor(s.section) + '22'"
+                    [style.color]="sectionColor(s.section)">
+                    {{ s.subLevelId }}
                   </span>
                 </td>
-                <td>{{ drillLabel(s.drillType) }}</td>
-                <td class="score-cell"
-                  [class.pass]="s.score >= 8"
-                  [class.fail]="s.score < 8">
+                <td class="score-cell" [class.pass]="s.passed" [class.fail]="!s.passed">
                   {{ s.score }}/{{ s.total }}
                 </td>
                 <td>{{ s.accuracy }}%</td>
                 <td>{{ s.avgTimeSec }}s</td>
+                <td>{{ s.passed ? '✓' : '✗' }}</td>
               </tr>
             }
           </tbody>
@@ -148,8 +143,7 @@
   @if (!sessions.length) {
     <div class="card empty-state">
       <div class="empty-icon">📊</div>
-      <p>No sessions yet — complete a drill to see your progress!</p>
+      <p>No sessions yet — complete a drill to see progress!</p>
     </div>
   }
-
 </div>

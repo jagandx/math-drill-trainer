@@ -1,15 +1,11 @@
 import { Component, OnInit, OnDestroy, signal } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { DrillEngineService } from '../../core/drill-engine.service';
 import { StorageService } from '../../core/storage.service';
-import { FormsModule } from '@angular/forms';
 import {
-  Question,
-  QuestionResult,
-  Session,
-  DrillType,
-  DrillLevel,
-  LEVELS,
+  Question, QuestionResult, Session, DrillType,
+  SUB_LEVELS, getSubLevel, SubLevel, MCQQuestion, NumericQuestion
 } from '../../core/models';
 
 @Component({
@@ -20,22 +16,23 @@ import {
   styleUrl: './drill.component.scss',
 })
 export class DrillComponent implements OnInit, OnDestroy {
+
   // Config
-  drillType: DrillType | 'mixed' = 'mixed';
-  level: DrillLevel = 1;
+  subLevelId    = 'A1';
+  subLevelDef   = signal<SubLevel | null>(null);
   totalQuestions = 10;
-  timeLimitSec = 10;
 
   // State
-  phase = signal<'idle' | 'running' | 'finished'>('idle');
-  currentQ = signal<Question | null>(null);
-  qIndex = signal(0);
-  userAnswer = '';
-  feedback = signal<'correct' | 'wrong' | 'timeout' | null>(null);
-  timerPct = signal(100);
-  liveCorrect = signal(0);
-  liveStreak = signal(0);
-  bestStreak = 0;
+  phase         = signal<'idle' | 'running' | 'finished'>('idle');
+  currentQ      = signal<Question | null>(null);
+  qIndex        = signal(0);
+  userAnswer    = '';          // for numeric
+  selectedOption = signal(-1); // for MCQ
+  feedback      = signal<'correct' | 'wrong' | 'timeout' | null>(null);
+  timerPct      = signal(100);
+  liveCorrect   = signal(0);
+  liveStreak    = signal(0);
+  bestStreak    = 0;
   currentStreak = 0;
 
   private results: QuestionResult[] = [];
@@ -50,18 +47,35 @@ export class DrillComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit() {
-    this.route.queryParams.subscribe((p) => {
-      this.drillType = (p['type'] as DrillType) ?? 'mixed';
-      this.level = (parseInt(p['level']) as DrillLevel) ?? 1;
-      const levelDef = LEVELS.find((l) => l.level === this.level);
-      this.timeLimitSec = levelDef?.timeLimitSeconds ?? 10;
+    this.route.queryParams.subscribe(p => {
+      this.subLevelId  = p['subLevelId'] ?? 'A1';
+      const sl         = getSubLevel(this.subLevelId);
+      this.subLevelDef.set(sl ?? null);
     });
   }
 
-  ngOnDestroy() {
-    this.clearTimer();
+  ngOnDestroy() { this.clearTimer(); }
+
+  // ── Type guards ─────────────────────────────────────────────────────────────
+  isNumeric(q: Question | null): q is NumericQuestion {
+    return q?.kind === 'numeric';
+  }
+  isMCQ(q: Question | null): q is MCQQuestion {
+    return q?.kind === 'mcq';
   }
 
+  get correctAnswerDisplay(): string {
+    const q = this.currentQ();
+    if (!q) return '';
+    if (q.kind === 'numeric') return String(q.answer);
+    return q.options[q.correctIndex];
+  }
+
+  get timeLimitSec(): number {
+    return this.subLevelDef()?.timeLimitSec ?? 10;
+  }
+
+  // ── Session control ─────────────────────────────────────────────────────────
   start() {
     this.results = [];
     this.qIndex.set(0);
@@ -79,24 +93,15 @@ export class DrillComponent implements OnInit, OnDestroy {
     else this.phase.set('idle');
   }
 
+  // ── Question flow ───────────────────────────────────────────────────────────
   private nextQuestion() {
-    if (this.qIndex() >= this.totalQuestions) {
-      this.finish();
-      return;
-    }
-
-    let type: DrillType;
-    if (this.drillType === 'mixed') {
-      const levelDef = LEVELS.find((l) => l.level === this.level);
-      const types = levelDef?.drillTypes ?? ['add1'];
-      type = types[Math.floor(Math.random() * types.length)];
-    } else {
-      type = this.drillType as DrillType;
-    }
-
-    const q = this.engine.generate(type);
+    if (this.qIndex() >= this.totalQuestions) { this.finish(); return; }
+    const sl = this.subLevelDef();
+    if (!sl) return;
+    const q = this.engine.generate(sl.drillType);
     this.currentQ.set(q);
     this.userAnswer = '';
+    this.selectedOption.set(-1);
     this.feedback.set(null);
     this.qStart = Date.now();
     this.startTimer();
@@ -109,48 +114,60 @@ export class DrillComponent implements OnInit, OnDestroy {
       const elapsed = (Date.now() - this.qStart) / 1000;
       const pct = Math.max(0, 100 - (elapsed / this.timeLimitSec) * 100);
       this.timerPct.set(pct);
-      if (elapsed >= this.timeLimitSec) {
-        this.clearTimer();
-        this.timeUp();
-      }
+      if (elapsed >= this.timeLimitSec) { this.clearTimer(); this.timeUp(); }
     }, 80);
   }
 
-  submit() {
+  // ── Answer submission ───────────────────────────────────────────────────────
+  submitNumeric() {
     if (this.phase() !== 'running') return;
-    const val = parseInt(this.userAnswer);
+    const q = this.currentQ();
+    if (!q || q.kind !== 'numeric') return;
+    const val = parseFloat(this.userAnswer);
     if (isNaN(val)) return;
     this.clearTimer();
     const timeSec = parseFloat(((Date.now() - this.qStart) / 1000).toFixed(1));
-    const q = this.currentQ()!;
     const correct = val === q.answer;
-    this.recordResult(q, val, correct, timeSec, false);
+    this.recordResult(q, String(val), String(q.answer), correct, timeSec, false);
     this.feedback.set(correct ? 'correct' : 'wrong');
     setTimeout(() => this.advance(), correct ? 600 : 1400);
   }
 
+  selectOption(index: number) {
+    if (this.phase() !== 'running') return;
+    const q = this.currentQ();
+    if (!q || q.kind !== 'mcq') return;
+    if (this.feedback()) return; // already answered
+    this.clearTimer();
+    this.selectedOption.set(index);
+    const timeSec  = parseFloat(((Date.now() - this.qStart) / 1000).toFixed(1));
+    const correct  = index === q.correctIndex;
+    this.recordResult(q, q.options[index], q.options[q.correctIndex], correct, timeSec, false);
+    this.feedback.set(correct ? 'correct' : 'wrong');
+    setTimeout(() => this.advance(), correct ? 800 : 1600);
+  }
+
   private timeUp() {
     const q = this.currentQ()!;
-    this.recordResult(q, null, false, this.timeLimitSec, true);
+    const correctAns = q.kind === 'numeric' ? String(q.answer) : q.options[q.correctIndex];
+    this.recordResult(q, null, correctAns, false, this.timeLimitSec, true);
     this.feedback.set('timeout');
     setTimeout(() => this.advance(), 1300);
   }
 
   private advance() {
-    this.qIndex.update((i) => i + 1);
+    this.qIndex.update(i => i + 1);
     if (this.qIndex() < this.totalQuestions) this.nextQuestion();
     else this.finish();
   }
 
   private recordResult(
-    q: Question,
-    userAnswer: number | null,
-    correct: boolean,
-    timeSec: number,
-    timedOut: boolean,
+    q: Question, userAnswer: string | null,
+    expected: string, correct: boolean,
+    timeSec: number, timedOut: boolean
   ) {
     if (correct) {
-      this.liveCorrect.update((c) => c + 1);
+      this.liveCorrect.update(c => c + 1);
       this.currentStreak++;
       if (this.currentStreak > this.bestStreak) this.bestStreak = this.currentStreak;
       this.liveStreak.set(this.currentStreak);
@@ -158,48 +175,50 @@ export class DrillComponent implements OnInit, OnDestroy {
       this.currentStreak = 0;
       this.liveStreak.set(0);
     }
+    const sl = this.subLevelDef();
     this.results.push({
-      question: q.display,
-      expected: q.answer,
+      question:   q.display,
+      expected,
       userAnswer,
       correct,
       timeSec,
       timedOut,
-      drillType: q.drillType,
+      drillType:  q.drillType,
+      subLevelId: this.subLevelId,
     });
   }
 
   private finish() {
     this.clearTimer();
     this.phase.set('finished');
-    const score = this.results.filter((r) => r.correct).length;
-    const total = this.results.length;
+    const score    = this.results.filter(r => r.correct).length;
+    const total    = this.results.length;
     const accuracy = Math.round((score / total) * 100);
-    const avgTime = parseFloat(
-      (this.results.reduce((s, r) => s + r.timeSec, 0) / total).toFixed(1),
+    const avgTime  = parseFloat(
+      (this.results.reduce((s, r) => s + r.timeSec, 0) / total).toFixed(1)
     );
+    const sl     = this.subLevelDef();
+    const passed = score >= (sl?.passScore ?? 8);
     const session: Session = {
-      id: `${Date.now()}`,
-      date: new Date().toISOString().split('T')[0],
-      level: this.level,
-      drillType: this.drillType,
-      score,
-      total,
-      accuracy,
-      avgTimeSec: avgTime,
-      bestStreakInSession: this.bestStreak,
-      timeLimitSec: this.timeLimitSec,
-      questions: this.results,
+      id:                   `${Date.now()}`,
+      date:                 new Date().toISOString().split('T')[0],
+      subLevelId:           this.subLevelId,
+      drillType:            sl?.drillType ?? 'add_1_1',
+      section:              sl?.section   ?? 'addition',
+      score, total, accuracy,
+      avgTimeSec:           avgTime,
+      bestStreakInSession:  this.bestStreak,
+      timeLimitSec:         this.timeLimitSec,
+      questions:            this.results,
+      passed,
     };
     const newState = this.storage.saveSession(session);
     this.router.navigate(['/summary'], {
-      state: { session, student: newState.student },
+      state: { session, student: newState.student }
     });
   }
 
-  private clearTimer() {
-    clearInterval(this.timerInt);
-  }
+  private clearTimer() { clearInterval(this.timerInt); }
 
   get timerColor(): string {
     const p = this.timerPct();
@@ -209,6 +228,6 @@ export class DrillComponent implements OnInit, OnDestroy {
   }
 
   onKeydown(e: KeyboardEvent) {
-    if (e.key === 'Enter') this.submit();
+    if (e.key === 'Enter') this.submitNumeric();
   }
 }

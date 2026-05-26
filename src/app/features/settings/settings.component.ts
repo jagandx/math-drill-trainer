@@ -1,8 +1,10 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { StorageService } from '../../core/storage.service';
-import { AppState, DrillLevel, LEVELS } from '../../core/models';
+import { AppState, SUB_LEVELS, SECTIONS } from '../../core/models';
 import { Router } from '@angular/router';
+import { getSubLevelsForSection } from '../../core/models';
+
 
 @Component({
   selector: 'app-settings',
@@ -16,7 +18,8 @@ export class SettingsComponent implements OnInit {
   nameInput    = '';
   showConfirm  = signal(false);
   saved        = signal(false);
-  levels       = LEVELS;
+  subLevels    = SUB_LEVELS;
+  sections     = SECTIONS;
 
   constructor(private storage: StorageService, private router: Router) {}
 
@@ -27,7 +30,9 @@ export class SettingsComponent implements OnInit {
   }
 
   get student() { return this.state()?.student; }
-
+getSubLevelsForSection(sectionId: string) {
+  return getSubLevelsForSection(sectionId as any);
+}
   saveName() {
     if (!this.nameInput.trim()) return;
     this.storage.updateStudent({ name: this.nameInput.trim() });
@@ -36,11 +41,8 @@ export class SettingsComponent implements OnInit {
     setTimeout(() => this.saved.set(false), 2000);
   }
 
-  setLevel(level: DrillLevel) {
-    this.storage.updateStudent({
-      currentLevel: level,
-      consecutivePassCount: 0,
-    });
+  setSubLevel(id: string) {
+    this.storage.updateStudent({ currentSubLevelId: id });
     this.state.set(this.storage.load());
   }
 

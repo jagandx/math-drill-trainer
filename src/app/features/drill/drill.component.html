@@ -2,7 +2,7 @@
 
   <!-- Config bar -->
   <div class="config-bar">
-    <span class="level-pill">Level {{ level }}</span>
+    <span class="level-pill">{{ subLevelDef()?.id }} — {{ subLevelDef()?.label }}</span>
     <div class="q-count">
       <span class="cfg-lbl">Questions:</span>
       @for (n of [5, 10, 20]; track n) {
@@ -28,7 +28,8 @@
     @if (phase() === 'idle') {
       <div class="idle-state">
         <div class="idle-icon">⚡</div>
-        <p>Ready for Level {{ level }} — {{ drillType }} drill</p>
+        <p>{{ subLevelDef()?.id }} — {{ subLevelDef()?.label }}</p>
+        <p class="time-note">⏱ {{ subLevelDef()?.timeLimitSec }}s per question</p>
         <button class="btn btn-primary" (click)="start()">▶ Start</button>
       </div>
     }
@@ -48,27 +49,49 @@
         </div>
       </div>
 
-      <!-- Answer -->
-      <div class="ans-row">
-        <input type="number" [(ngModel)]="userAnswer"
-               (keydown)="onKeydown($event)"
-               class="ans-input" placeholder="?" autofocus />
-        <button class="btn btn-primary" (click)="submit()">✓</button>
-      </div>
+      <!-- NUMERIC input -->
+      @if (isNumeric(currentQ())) {
+        <div class="ans-row">
+          <input type="number" [(ngModel)]="userAnswer"
+                 (keydown)="onKeydown($event)"
+                 class="ans-input" placeholder="?" autofocus />
+          <button class="btn btn-primary" (click)="submitNumeric()">✓</button>
+        </div>
+        @if (currentQ()?.kind === 'numeric') {
+          <div class="hint">{{ $any(currentQ()).hint }}</div>
+        }
+      }
+
+      <!-- MCQ options -->
+      @if (isMCQ(currentQ())) {
+        <div class="mcq-options">
+          @for (opt of $any(currentQ()).options; track $index; let i = $index) {
+            <button class="mcq-btn"
+              [class.selected]="selectedOption() === i"
+              [class.correct]="feedback() && i === $any(currentQ()).correctIndex"
+              [class.wrong]="feedback() && selectedOption() === i && i !== $any(currentQ()).correctIndex"
+              [disabled]="!!feedback()"
+              (click)="selectOption(i)">
+              <span class="opt-label">{{ ['A','B','C','D'][i] }}</span>
+              {{ opt }}
+            </button>
+          }
+        </div>
+      }
 
       <!-- Feedback -->
       @if (feedback()) {
         <div class="feedback" [class]="feedback()">
           @if (feedback() === 'correct') { <span>✓ Correct!</span> }
-          @if (feedback() === 'wrong')   { <span>✗ Wrong — {{ currentQ()?.answer }}</span> }
-          @if (feedback() === 'timeout') { <span>⏱ Time up — {{ currentQ()?.answer }}</span> }
+          @if (feedback() === 'wrong')   { <span>✗ Answer: {{ correctAnswerDisplay }}</span> }
+          @if (feedback() === 'timeout') { <span>⏱ Time up — {{ correctAnswerDisplay }}</span> }
         </div>
       }
 
-      <button class="btn btn-danger stop-btn" (click)="stop()">⏹ Stop session</button>
+      <button class="btn btn-danger stop-btn" (click)="stop()">⏹ Stop</button>
     }
 
-    <!-- FINISHED (brief flash before redirect) -->
+    <!-- FINISHED -->
     @if (phase() === 'finished') {
       <div class="idle-state">
         <div class="idle-icon">🎉</div>

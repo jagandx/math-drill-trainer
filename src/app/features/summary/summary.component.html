@@ -4,10 +4,11 @@
     <!-- Result header -->
     <div class="result-header card" [class.pass]="passed" [class.fail]="!passed">
       <div class="result-icon">{{ passed ? '🎉' : '💪' }}</div>
+      <div class="result-sublevel">{{ subLevelDef?.id }} — {{ subLevelDef?.label }}</div>
       <div class="result-title">{{ passed ? 'Well done!' : 'Keep practising!' }}</div>
       <div class="result-score">{{ session()?.score }}/{{ session()?.total }}</div>
       @if (leveledUp()) {
-        <div class="level-up">🏆 Level {{ student()?.currentLevel }} Unlocked!</div>
+        <div class="level-up">⭐ {{ newBadge() }}</div>
       }
     </div>
 
@@ -31,25 +32,35 @@
       </div>
     </div>
 
-    <!-- Accuracy bar -->
+    <!-- Pass progress -->
     <div class="card">
       <div class="bar-label">
         <span>Accuracy</span><span>{{ session()?.accuracy }}%</span>
       </div>
       <div class="bar-bg">
-        <div class="bar-fill" [style.width.%]="session()?.accuracy"
-             [style.background]="accuracyColor"></div>
+        <div class="bar-fill"
+          [style.width.%]="session()?.accuracy"
+          [style.background]="accuracyColor">
+        </div>
       </div>
 
       <div class="bar-label" style="margin-top:10px">
-        <span>Pass progress</span>
-        <span>{{ student()?.consecutivePassCount }}/2 sessions</span>
+        <span>Pass streak for {{ subLevelDef?.id }}</span>
+        <span>{{ passStreak }}/{{ passRequired }} sessions</span>
       </div>
       <div class="bar-bg">
         <div class="bar-fill"
-          [style.width.%]="(student()?.consecutivePassCount ?? 0) * 50"
-          style="background: var(--teal)"></div>
+          [style.width.%]="(passStreak / passRequired) * 100"
+          style="background: var(--teal)">
+        </div>
       </div>
+      <p class="pass-note">
+        @if (passed) {
+          ✓ Passed! {{ passRequired - passStreak > 0 ? (passRequired - passStreak) + ' more pass(es) to unlock next level' : 'Sub-level complete!' }}
+        } @else {
+          Score 8 or more to count as a pass
+        }
+      </p>
     </div>
 
     <!-- Question log -->
@@ -61,7 +72,9 @@
             <span class="q-dot">{{ q.correct ? '✓' : '✗' }}</span>
             <span class="q-text">{{ q.question }}</span>
             <span class="q-ans">
-              @if (!q.correct) { <span class="wrong-ans">{{ q.userAnswer ?? '—' }} → </span> }
+              @if (!q.correct) {
+                <span class="wrong-ans">{{ q.userAnswer ?? '—' }} → </span>
+              }
               {{ q.expected }}
             </span>
             <span class="q-time">{{ q.timeSec }}s</span>

@@ -1,36 +1,31 @@
 <div class="home">
+
   <!-- Name setup -->
   @if (!student?.name) {
     <div class="card setup-card">
       <h2>👋 Welcome!</h2>
       <p>What's your name?</p>
       <div class="name-row">
-        <input
-          [(ngModel)]="nameInput"
-          placeholder="Enter your name"
-          (keydown.enter)="saveName()"
-          class="name-input"
-          autofocus
-        />
+        <input [(ngModel)]="nameInput" placeholder="Enter your name"
+               (keydown.enter)="saveName()" class="name-input" autofocus />
         <button class="btn btn-primary" (click)="saveName()">Let's go →</button>
       </div>
     </div>
   }
 
-  <!-- Student header -->
   @if (student?.name) {
+
+    <!-- Header -->
     <div class="header">
       <div class="greet">
         <span class="hi">Hi, {{ student?.name }}! 👋</span>
         <span class="streak">🔥 {{ student?.dailyStreak }}-day streak</span>
       </div>
-      <div
-        class="level-badge"
-        [style.background]="currentLevel?.color + '22'"
-        [style.color]="currentLevel?.color"
-        [style.border-color]="currentLevel?.color + '55'"
-      >
-        Level {{ currentLevel?.level }} — {{ currentLevel?.name }}
+      <div class="level-badge"
+        [style.background]="currentSection?.colorLight"
+        [style.color]="currentSection?.color"
+        [style.border-color]="currentSection?.color + '55'">
+        {{ currentSubLevel?.id }} — {{ currentSubLevel?.label }}
       </div>
     </div>
 
@@ -42,26 +37,61 @@
       </div>
       <div class="stat-card">
         <div class="stat-val">{{ student?.totalCorrect }}</div>
-        <div class="stat-lbl">Total correct</div>
+        <div class="stat-lbl">Correct</div>
       </div>
       <div class="stat-card">
-        <div class="stat-val">{{ student?.consecutivePassCount }}/2</div>
+        <div class="stat-val">{{ subLevelPassStreak }}/{{ passStreakRequired }}</div>
         <div class="stat-lbl">Pass streak</div>
       </div>
     </div>
 
-    <!-- Start drill -->
+    <!-- Current drill -->
     <div class="card drill-card">
-      <h3>Start a drill</h3>
-      <p class="drill-desc">{{ currentLevel?.description }}</p>
-      <button class="btn btn-primary start-btn" (click)="startDrill('mixed')">
-        ⚡ Start Level {{ currentLevel?.level }} Drill
+      <h3>Current drill</h3>
+      <p class="drill-desc">{{ currentSubLevel?.id }} — {{ currentSubLevel?.label }}</p>
+      <p class="drill-hint">⏱ Time limit: {{ currentSubLevel?.timeLimitSec }}s per question</p>
+      <button class="btn btn-primary start-btn" (click)="startDrill()">
+        ⚡ Start {{ currentSubLevel?.id }} Drill
       </button>
-      <div class="drill-types">
-        @for (type of currentLevel?.drillTypes ?? []; track type) {
-          <button class="btn type-btn" (click)="startDrill(type)">
-            {{ drillLabel(type) }}
-          </button>
+    </div>
+
+    <!-- Section overview -->
+    <div class="card">
+      <h3>Your journey</h3>
+      <div class="sections-list">
+        @for (sec of sections; track sec.id) {
+          <div class="sec-row" [class.locked]="!isSectionUnlocked(sec.id)">
+            <div class="sec-icon"
+              [style.background]="isSectionUnlocked(sec.id) ? sec.colorLight : '#F1EFE8'"
+              [style.color]="isSectionUnlocked(sec.id) ? sec.color : '#888780'">
+              {{ sec.icon }}
+            </div>
+            <div class="sec-info">
+              <div class="sec-name">{{ sec.label }}</div>
+              @if (isSectionUnlocked(sec.id)) {
+                <span class="sec-done">
+                  {{ doneCountForSection(sec.id) }}/{{ subLevelsForSection(sec.id).length }} done
+                </span>
+              } @else {
+                <span class="sec-locked">🔒 Locked</span>
+              }
+            </div>
+            @if (isSectionUnlocked(sec.id)) {
+              <div class="sec-steps">
+                @for (sl of subLevelsForSection(sec.id); track sl.id) {
+                  <button class="step-dot"
+                    [class.done]="subLevelDone(sl.id)"
+                    [class.current]="sl.id === student?.currentSubLevelId"
+                    [class.locked]="!subLevelUnlocked(sl.id)"
+                    [disabled]="!subLevelUnlocked(sl.id)"
+                    [title]="sl.id + ': ' + sl.label"
+                    (click)="startDrill(sl.id)">
+                    {{ subLevelDone(sl.id) ? '✓' : sl.id }}
+                  </button>
+                }
+              </div>
+            }
+          </div>
         }
       </div>
     </div>
@@ -74,8 +104,10 @@
           @for (s of recentSessions; track s.id) {
             <div class="session-row">
               <span class="s-date">{{ s.date }}</span>
-              <span class="s-type">{{ s.drillType }}</span>
-              <span class="s-score" [class.pass]="s.score >= 8" [class.fail]="s.score < 8">
+              <span class="s-sublevel">{{ s.subLevelId }}</span>
+              <span class="s-score"
+                [class.pass]="s.passed"
+                [class.fail]="!s.passed">
                 {{ s.score }}/{{ s.total }}
               </span>
               <span class="s-acc">{{ s.accuracy }}%</span>

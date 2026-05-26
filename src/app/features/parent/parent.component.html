@@ -2,14 +2,14 @@
 
   <div class="page-header">
     <h2>👨‍👩‍👦 Parent Dashboard</h2>
-    <p class="sub">Track {{ student?.name }}'s progress</p>
+    <p class="sub">Tracking {{ student?.name }}'s progress</p>
   </div>
 
   <!-- Summary stats -->
   <div class="summary-grid">
     <div class="sum-card purple">
-      <div class="sum-val">{{ student?.currentLevel }}</div>
-      <div class="sum-lbl">Current level</div>
+      <div class="sum-val">{{ currentSubLevelId }}</div>
+      <div class="sum-lbl">Current sub-level</div>
     </div>
     <div class="sum-card teal">
       <div class="sum-val">{{ avgAccuracy }}%</div>
@@ -37,37 +37,29 @@
   @if (weakSpots.length > 0) {
     <div class="card">
       <h3>⚠️ Areas needing attention</h3>
-      <div class="weak-list">
-        @for (w of weakSpots; track w.drillType) {
-          <div class="weak-row">
-            <span class="weak-label">{{ w.label }}</span>
-            <div class="weak-bar-wrap">
-              <div class="weak-bar"
-                [style.width.%]="Math.min(100, w.errorCount * 10)">
-              </div>
-            </div>
-            <span class="weak-count">{{ w.errorCount }} errors</span>
+      @for (w of weakSpots; track w.drillType) {
+        <div class="weak-row">
+          <span class="weak-label">{{ w.label }}</span>
+          <div class="weak-bar-wrap">
+            <div class="weak-bar" [style.width.%]="Math.min(100, w.errorCount * 10)"></div>
           </div>
-        }
-      </div>
+          <span class="weak-count">{{ w.errorCount }} errors</span>
+        </div>
+      }
     </div>
   }
 
-  <!-- Download actions -->
+  <!-- Downloads -->
   <div class="card">
     <h3>📥 Download logs</h3>
     <p class="download-note">Export session data for your records</p>
     <div class="download-btns">
-      <button class="btn btn-primary" (click)="downloadCSV()">
-        ⬇ Download CSV
-      </button>
-      <button class="btn" (click)="downloadReport()">
-        📄 Download Text Report
-      </button>
+      <button class="btn btn-primary" (click)="downloadCSV()">⬇ Download CSV</button>
+      <button class="btn" (click)="downloadReport()">📄 Text Report</button>
     </div>
   </div>
 
-  <!-- Full session table -->
+  <!-- Session table -->
   @if (sessions.length > 0) {
     <div class="card">
       <h3>All sessions</h3>
@@ -75,36 +67,27 @@
         <table class="session-table">
           <thead>
             <tr>
-              <th>Date</th>
-              <th>Level</th>
-              <th>Drill type</th>
-              <th>Score</th>
-              <th>Accuracy</th>
-              <th>Avg time</th>
-              <th>Streak</th>
+              <th>Date</th><th>Sub-level</th><th>Score</th>
+              <th>Accuracy</th><th>Avg time</th><th>Passed</th>
             </tr>
           </thead>
           <tbody>
             @for (s of sessions; track s.id) {
-              <tr [class.pass-row]="s.score >= 8"
-                  [class.fail-row]="s.score < 8">
+              <tr [class.pass-row]="s.passed" [class.fail-row]="!s.passed">
                 <td>{{ s.date }}</td>
                 <td>
-                  <span class="lvl-pill"
-                    [style.background]="levelColor(s.level) + '22'"
-                    [style.color]="levelColor(s.level)">
-                    L{{ s.level }}
+                  <span class="sl-pill"
+                    [style.background]="sectionColor(s.section) + '22'"
+                    [style.color]="sectionColor(s.section)">
+                    {{ s.subLevelId }}
                   </span>
                 </td>
-                <td>{{ drillLabel(s.drillType) }}</td>
-                <td class="score-cell"
-                  [class.pass]="s.score >= 8"
-                  [class.fail]="s.score < 8">
+                <td class="score-cell" [class.pass]="s.passed" [class.fail]="!s.passed">
                   {{ s.score }}/{{ s.total }}
                 </td>
                 <td>{{ s.accuracy }}%</td>
                 <td>{{ s.avgTimeSec }}s</td>
-                <td>{{ s.bestStreakInSession }}</td>
+                <td>{{ s.passed ? '✓' : '✗' }}</td>
               </tr>
             }
           </tbody>
@@ -116,8 +99,7 @@
   @if (!sessions.length) {
     <div class="card empty-state">
       <div class="empty-icon">📋</div>
-      <p>No sessions recorded yet. Have {{ student?.name }} complete a drill first!</p>
+      <p>No sessions yet. Have {{ student?.name }} complete a drill first!</p>
     </div>
   }
-
 </div>
