@@ -12,8 +12,10 @@
 
 .card h3 { font-size: 14px; font-weight: 500; margin-bottom: 12px; }
 
+// ── Section blocks ────────────────────────────────────────────────────────
 .sec-block {
-  border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 10px; margin-bottom: 10px;
   &:last-child { border-bottom: none; margin-bottom: 0; }
   &.locked { opacity: 0.55; }
 }
@@ -30,24 +32,92 @@
 .sec-badge  { font-size: 11px; color: var(--green); font-weight: 500; }
 .sec-locked { font-size: 11px; color: var(--text-ter); }
 
-.sl-steps { display: flex; flex-direction: column; gap: 6px; padding-left: 14px; }
-.sl-item {
-  display: flex; gap: 10px; align-items: flex-start;
-  &.locked { opacity: 0.5; }
-  &.active .sl-dot { background: var(--purple); color: #fff; border-color: var(--purple); }
-  &.done  .sl-dot  { background: var(--green);  color: #fff; border-color: var(--green); }
+// ── Sub-level steps ───────────────────────────────────────────────────────
+.sl-steps {
+  display: flex; flex-direction: column; gap: 4px; padding-left: 10px;
 }
+.sl-item {
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  &.locked  { opacity: 0.5; }
+  &.active  { border-color: var(--purple); }
+  &.done    { border-color: var(--green); }
+}
+
+// Sub-level clickable row
+.sl-row {
+  display: flex; gap: 10px; align-items: center;
+  width: 100%; padding: 8px 10px;
+  background: transparent; border: none; cursor: pointer;
+  text-align: left; transition: background .15s;
+
+  &:hover:not(:disabled) { background: var(--bg); }
+  &:disabled { cursor: default; }
+}
+
 .sl-dot {
-  min-width: 32px; height: 32px; border-radius: 50%;
+  min-width: 30px; height: 30px; border-radius: 50%;
   border: 1px solid var(--border); background: #fff;
   display: flex; align-items: center; justify-content: center;
-  font-size: 10px; font-weight: 500; color: var(--text-sec);
-  flex-shrink: 0;
+  font-size: 10px; font-weight: 500; color: var(--text-sec); flex-shrink: 0;
+
+  .sl-item.done  & { background: var(--green);  color: #fff; border-color: var(--green); }
+  .sl-item.active & { background: var(--purple); color: #fff; border-color: var(--purple); }
 }
-.sl-info  { flex: 1; padding-top: 4px; }
-.sl-label { font-size: 13px; color: var(--text-pri); }
+
+.sl-info { flex: 1; }
+.sl-label { font-size: 13px; color: var(--text-pri); font-weight: 500; }
 .sl-stats { font-size: 11px; color: var(--text-ter); margin-top: 2px; }
 
+.sl-expand {
+  font-size: 10px; color: var(--text-ter); flex-shrink: 0; padding-right: 4px;
+}
+
+// ── Expanded session history ───────────────────────────────────────────────
+.sl-history {
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+}
+.sh-header {
+  padding: 8px 12px;
+  font-size: 12px; font-weight: 500; color: var(--text-sec);
+  border-bottom: 1px solid var(--border);
+}
+.sh-table-wrap { overflow-x: auto; }
+.sh-table {
+  width: 100%; border-collapse: collapse; font-size: 12px;
+
+  th {
+    text-align: left; padding: 7px 10px;
+    border-bottom: 1px solid var(--border);
+    font-size: 11px; font-weight: 500; color: var(--text-sec);
+    background: var(--card-bg);
+  }
+  td {
+    padding: 7px 10px; border-bottom: 1px solid var(--border);
+    &:last-child { border-bottom: none; }
+  }
+  tr:last-child td { border-bottom: none; }
+
+  .pass-row { background: #EAF3DE22; }
+  .fail-row { background: #FAECE722; }
+
+  .s-num { color: var(--text-ter); font-size: 11px; }
+
+  .score-cell {
+    font-weight: 500;
+    &.pass { color: var(--green); }
+    &.fail { color: var(--coral); }
+  }
+  .pass-cell {
+    font-weight: 500; font-size: 14px;
+    color: var(--green);
+    tr.fail-row & { color: var(--coral); }
+  }
+}
+
+// ── Weak spots ────────────────────────────────────────────────────────────
 .weak-row {
   display: flex; align-items: center; gap: 10px;
   padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 13px;
@@ -57,6 +127,7 @@
   .weak-time   { color: var(--text-sec); font-size: 12px; min-width: 50px; text-align: right; }
 }
 
+// ── Badges ────────────────────────────────────────────────────────────────
 .badges-row { display: flex; flex-wrap: wrap; gap: 8px; }
 .badge-card {
   background: var(--amber-l); border: 1px solid #EF9F2766;
@@ -66,16 +137,8 @@
   .badge-date  { font-size: 10px; color: var(--text-ter); margin-top: 2px; }
 }
 
-.table-wrap { overflow-x: auto; }
-.session-table {
-  width: 100%; border-collapse: collapse; font-size: 12px;
-  th { text-align: left; padding: 7px 6px; border-bottom: 1px solid var(--border); font-size: 11px; font-weight: 500; color: var(--text-sec); }
-  td { padding: 7px 6px; border-bottom: 1px solid var(--border); }
-  tr:last-child td { border-bottom: none; }
-  .pass-row { background: #EAF3DE22; }
-  .fail-row { background: #FAECE722; }
-  .sl-pill { padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 500; }
-  .score-cell { font-weight: 500; &.pass { color: var(--green); } &.fail { color: var(--coral); } }
+.empty-state {
+  text-align: center; padding: 32px;
+  .empty-icon { font-size: 36px; margin-bottom: 8px; }
+  p { color: var(--text-sec); font-size: 14px; }
 }
-
-.empty-state { text-align: center; padding: 32px; .empty-icon { font-size: 36px; margin-bottom: 8px; } p { color: var(--text-sec); font-size: 14px; } }

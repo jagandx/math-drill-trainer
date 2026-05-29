@@ -1,104 +1,141 @@
 import { Component, OnInit, signal } from '@angular/core';
-import { StorageService } from '../../core/storage.service';
-import { AppState, Session, SECTIONS, DRILL_LABELS, DrillType } from '../../core/models';
+import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
+import { DbService } from '../../core/db.service';
+import { AuthService } from '../../core/auth.service';
+import { ChildProfile, Session, SECTIONS, DRILL_LABELS,
+         DrillType, AVATARS, buildInitialProgress } from '../../core/models';
 
 @Component({
   selector: 'app-parent',
   standalone: true,
-  imports: [],
+  imports: [FormsModule],
   templateUrl: './parent.component.html',
   styleUrl: './parent.component.scss',
 })
 export class ParentComponent implements OnInit {
-  state = signal<AppState | null>(null);
-  Math  = Math;
+  children       = signal<ChildProfile[]>([]);
+  selectedChild  = signal<ChildProfile | null>(null);
+  childSessions  = signal<Session[]>([]);
+  showAddChild   = signal(false);
+  showChangePIN  = signal(false);
+  Math           = Math;
 
-  constructor(private storage: StorageService) {}
+  // Add child form
+  newChildName   = '';
+  newChildAvatar = signal(AVATARS[0]);
+  addError       = signal('');
+  avatars        = AVATARS;
 
-  ngOnInit() { this.state.set(this.storage.load()); }
+  // Change PIN form
+  oldPin   = '';
+  newPin   = '';
+  pinError = signal('');
+  pinSaved = signal(false);
 
-  get student()   { return this.state()?.student; }
-  get sessions()  { return (this.state()?.sessions ?? []).slice().reverse(); }
-  get weakSpots() { return this.state()?.weakSpots ?? []; }
+  constructor(
+    private db:   DbService,
+    private auth: AuthService,
+    private router: Router,
+  ) {}
 
-  get currentSubLevelId() { return this.student?.currentSubLevelId ?? 'A1'; }
-  get totalSessions()     { return this.state()?.sessions.length ?? 0; }
+  async ngOnInit() {
+    await this.loadChildren();
+  }
+
+  async loadChildren() {
+    const children = await this.db.getAllChildren();
+    this.children.set(children);
+    if (children.length > 0 && !this.selectedChild()) {
+      await this.selectChild(children[0]);
+    }
+  }
+
+  async selectChild(child: ChildProfile) {
+    this.selectedChild.set(child);
+    const sessions = await this.db.getSessionsForChild(child.id);
+    this.childSessions.set(sessions as Session[]);
+  }
+goSettings() {
+  this.router.navigate(['/settings']);
+}
+  get student()   { return this.selectedChild()?.student; }
+  get weakSpots() { return this.selectedChild()?.weakSpots ?? []; }
+  get sessions()  { return this.childSessions().slice().reverse(); }
 
   get avgAccuracy(): number {
-    const s = this.state()?.sessions ?? [];
+    const s = this.childSessions();
     if (!s.length) return 0;
     return Math.round(s.reduce((a,b) => a + b.accuracy, 0) / s.length);
   }
   get passRate(): number {
-    const s = this.state()?.sessions ?? [];
+    const s = this.childSessions();
     if (!s.length) return 0;
     return Math.round((s.filter(x => x.passed).length / s.length) * 100);
   }
   get improvementTrend(): string {
-    const s = this.state()?.sessions ?? [];
+    const s = this.childSessions();
     if (s.length < 4) return '—';
     const half     = Math.floor(s.length / 2);
-    const firstAvg = s.slice(0, half).reduce((a,b) => a + b.accuracy, 0) / half;
-    const lastAvg  = s.slice(half).reduce((a,b) => a + b.accuracy, 0) / (s.length - half);
+    const firstAvg = s.slice(0,half).reduce((a,b) => a+b.accuracy,0) / half;
+    const lastAvg  = s.slice(half).reduce((a,b)  => a+b.accuracy,0) / (s.length-half);
     const diff     = Math.round(lastAvg - firstAvg);
     return diff > 0 ? `+${diff}%` : `${diff}%`;
   }
 
-  sectionColor(sectionId: string): string {
-    return SECTIONS.find(s => s.id === sectionId)?.color ?? '#534AB7';
+  sectionColor(id: string): string {
+    return SECTIONS.find(s => s.id === id)?.color ?? '#534AB7';
   }
-
   drillLabel(type: DrillType): string {
     return DRILL_LABELS[type] ?? type;
   }
 
-  downloadCSV() {
-    this.storage.exportCSV(this.state()?.sessions ?? []);
+  // ── Add child ──────────────────────────────────────────────────────────────
+  openAddChild()  { this.showAddChild.set(true); this.newChildName = ''; this.addError.set(''); }
+  closeAddChild() { this.showAddChild.set(false); }
+
+  selectAvatar(a: string) { this.newChildAvatar.set(a); }
+
+  async addChild() {
+    if (!this.newChildName.trim()) { this.addError.set('Name is required'); return; }
+    if (this.children().length >= 3) { this.addError.set('Maximum 3 children allowed'); return; }
+    const child = await this.db.createChild(this.newChildName.trim(), this.newChildAvatar());
+    this.showAddChild.set(false);
+    await this.loadChildren();
+    await this.selectChild(child);
   }
 
-  downloadReport() {
-    const s = this.state();
-    if (!s) return;
-    const student  = s.student;
-    const sessions = s.sessions;
-    const lines = [
-      '============================================',
-      '     MATH DRILL TRAINER — PROGRESS REPORT  ',
-      '============================================',
-      '',
-      `Student        : ${student.name}`,
-      `Current Sub-Level: ${student.currentSubLevelId}`,
-      `Daily Streak   : ${student.dailyStreak} days`,
-      `Total Sessions : ${student.totalSessions}`,
-      `Total Correct  : ${student.totalCorrect}`,
-      `Report Date    : ${new Date().toLocaleDateString()}`,
-      '',
-      '── OVERALL STATS ──────────────────────────',
-      `Average Accuracy : ${this.avgAccuracy}%`,
-      `Pass Rate        : ${this.passRate}%`,
-      `Improvement      : ${this.improvementTrend}`,
-      '',
-      '── WEAK SPOTS ─────────────────────────────',
-      ...s.weakSpots.map(w => `  ${w.label}: ${w.errorCount} errors, avg ${w.avgTimeSec}s`),
-      '',
-      '── SESSION LOG ────────────────────────────',
-      'Date       | Sub-Level | Score | Accuracy | Avg Time | Passed',
-      '-'.repeat(65),
-      ...sessions.map(x =>
-        `${x.date} | ${x.subLevelId.padEnd(9)} | ${x.score}/${x.total}  | ${String(x.accuracy+'%').padEnd(9)}| ${x.avgTimeSec}s    | ${x.passed ? 'Yes' : 'No'}`
-      ),
-      '',
-      '── BADGES ─────────────────────────────────',
-      ...student.badges.map(b => `  ${b.icon} ${b.label} — ${b.earnedDate}`),
-      '',
-      '============================================',
-    ];
-    const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href = url;
-    a.download = `${student.name}-drill-report-${new Date().toISOString().split('T')[0]}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
+  async deleteChild(child: ChildProfile) {
+    if (!confirm(`Delete ${child.name}? All their data will be lost.`)) return;
+    await this.db.deleteChild(child.id);
+    this.selectedChild.set(null);
+    this.childSessions.set([]);
+    await this.loadChildren();
   }
+
+  // ── Change PIN ─────────────────────────────────────────────────────────────
+  openChangePIN()  { this.showChangePIN.set(true); this.oldPin=''; this.newPin=''; this.pinError.set(''); this.pinSaved.set(false); }
+  closeChangePIN() { this.showChangePIN.set(false); }
+
+  async submitChangePIN() {
+    const parent = await this.db.getParent();
+    if (!parent) return;
+    const valid = await this.db.verifyPin(this.oldPin, parent.pinHash);
+    if (!valid) { this.pinError.set('Current PIN is incorrect'); return; }
+    if (this.newPin.length !== 4) { this.pinError.set('New PIN must be 4 digits'); return; }
+    const newHash = await this.db.hashPin(this.newPin);
+    await this.db.updateParent({ pinHash: newHash });
+    this.pinSaved.set(true);
+    setTimeout(() => this.closeChangePIN(), 1500);
+  }
+
+  // ── Downloads ──────────────────────────────────────────────────────────────
+  downloadCSV() {
+    const child = this.selectedChild();
+    if (!child) return;
+    this.db.exportCSV(this.childSessions(), child.name);
+  }
+
+  // ── Logout ─────────────────────────────────────────────────────────────────
+  logout() { this.auth.logout(); }
 }

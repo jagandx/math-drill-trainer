@@ -950,3 +950,29 @@ export const DRILL_LABELS: Record<DrillType, string> = {
   lhcf: 'LCM & HCF',
   unit_digit: 'Unit Digit',
 };
+
+
+// ─── Auth & Multi-child models ────────────────────────────────────────────────
+
+export const AVATARS = ['🦁','🐯','🐻','🦊','🐼','🐨','🦄','🐸'];
+
+export interface ChildProfile {
+  id: string;
+  name: string;
+  avatar: string;
+  createdAt: number;
+  student: Student;
+  weakSpots: WeakSpot[];
+}
+
+export interface ParentAccount {
+  id: 'parent';
+  pinHash: string;       // SHA-256 of PIN
+  childIds: string[];
+  createdAt: number;
+}
+
+export interface AuthState {
+  role: 'child' | 'parent' | null;
+  childId: string | null;
+}

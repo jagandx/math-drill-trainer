@@ -1,56 +1,97 @@
 <div class="settings-page">
 
-  <div class="page-header"><h2>⚙️ Settings</h2></div>
-
-  <!-- Name -->
-  <div class="card">
-    <h3>Student name</h3>
-    <div class="name-row">
-      <input [(ngModel)]="nameInput" placeholder="Enter name"
-             (keydown.enter)="saveName()" class="name-input" />
-      <button class="btn btn-primary" (click)="saveName()">Save</button>
-    </div>
-    @if (saved()) { <div class="saved-msg">✓ Name saved!</div> }
+  <div class="page-header">
+    <button class="back-btn" (click)="goBack()">← Back</button>
+    <h2>⚙️ Settings</h2>
   </div>
 
-  <!-- Manual sub-level -->
+  <!-- Child selector -->
+  @if (children().length > 1) {
+    <div class="child-tabs">
+      @for (c of children(); track c.id) {
+        <button class="child-tab"
+          [class.active]="selectedChild()?.id === c.id"
+          (click)="selectChild(c)">
+          {{ c.avatar }} {{ c.name }}
+        </button>
+      }
+    </div>
+  }
+
+  <!-- Current student info -->
+  @if (student) {
+    <div class="card">
+      <h3>{{ selectedChild()?.avatar }} {{ selectedChild()?.name }}</h3>
+      <div class="info-rows">
+        <div class="info-row">
+          <span>Current sub-level</span>
+          <span class="info-val highlight">{{ student.currentSubLevelId }}</span>
+        </div>
+        <div class="info-row">
+          <span>Total sessions</span>
+          <span class="info-val">{{ student.totalSessions }}</span>
+        </div>
+        <div class="info-row">
+          <span>Total correct</span>
+          <span class="info-val">{{ student.totalCorrect }}</span>
+        </div>
+        <div class="info-row">
+          <span>Daily streak</span>
+          <span class="info-val">{{ student.dailyStreak }} 🔥</span>
+        </div>
+        <div class="info-row">
+          <span>Badges earned</span>
+          <span class="info-val">{{ student.badges.length }}</span>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Sub-level selector -->
   <div class="card">
     <h3>Set sub-level manually</h3>
     <p class="setting-note">Sub-levels unlock automatically. Use this to adjust if needed.</p>
-    @for (sec of sections; track sec.id) {
-      <div class="section-group">
-        <div class="section-label" [style.color]="sec.color">{{ sec.icon }} {{ sec.label }}</div>
-        <div class="sl-btns">
-          @for (sl of getSubLevelsForSection(sec.id); track sl.id) {
-            <button class="sl-btn"
-              [class.active]="student?.currentSubLevelId === sl.id"
-              [style.--sc]="sec.color"
-              (click)="setSubLevel(sl.id)">
-              <span class="sl-id">{{ sl.id }}</span>
-              <span class="sl-name">{{ sl.label }}</span>
-            </button>
-          }
-        </div>
-      </div>
-    }
-  </div>
 
-  <!-- Stats -->
-  <div class="card">
-    <h3>Current progress</h3>
-    <div class="info-rows">
-      <div class="info-row"><span>Total sessions</span><span class="info-val">{{ student?.totalSessions }}</span></div>
-      <div class="info-row"><span>Total correct</span><span class="info-val">{{ student?.totalCorrect }}</span></div>
-      <div class="info-row"><span>Daily streak</span><span class="info-val">{{ student?.dailyStreak }} 🔥</span></div>
-      <div class="info-row"><span>Current sub-level</span><span class="info-val">{{ student?.currentSubLevelId }}</span></div>
-      <div class="info-row"><span>Badges earned</span><span class="info-val">{{ student?.badges?.length ?? 0 }}</span></div>
+    @if (saved()) {
+      <div class="saved-msg">✓ Sub-level updated!</div>
+    }
+
+    <div class="sections-wrap">
+      @for (sec of sections; track sec.id) {
+        <div class="sec-group">
+          <div class="sec-label"
+            [style.color]="sec.color"
+            [style.background]="sec.colorLight">
+            <span class="sec-icon">{{ sec.icon }}</span>
+            {{ sec.label }}
+          </div>
+          <div class="sl-grid">
+            @for (sl of getSubLevelsForSection(sec.id); track sl.id) {
+              <button class="sl-btn"
+                [class.active]="isCurrentSubLevel(sl.id)"
+                [class.done]="isDone(sl.id)"
+                [class.locked]="!isUnlocked(sl.id)"
+                [style.--sc]="sec.color"
+                [title]="sl.label"
+                (click)="setSubLevel(sl.id)">
+                <span class="sl-id">{{ sl.id }}</span>
+                <span class="sl-lbl">{{ sl.label }}</span>
+                @if (isDone(sl.id)) { <span class="sl-check">✓</span> }
+              </button>
+            }
+          </div>
+        </div>
+      }
     </div>
   </div>
 
   <!-- Reset -->
   <div class="card danger-card">
-    <h3>⚠️ Reset all data</h3>
-    <p class="setting-note danger-note">Permanently deletes all sessions, progress, and badges.</p>
+    <h3>⚠️ Reset progress</h3>
+    <p class="setting-note danger-note">
+      Permanently deletes all sessions, badges and progress for
+      {{ selectedChild()?.name }}.
+    </p>
     @if (!showConfirm()) {
       <button class="btn btn-danger" (click)="confirmReset()">Reset everything</button>
     }
@@ -64,4 +105,5 @@
       </div>
     }
   </div>
+
 </div>

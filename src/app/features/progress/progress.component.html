@@ -2,17 +2,31 @@
 
   <!-- Stats row -->
   <div class="stats-row">
-    <div class="stat-card"><div class="stat-val">{{ student?.totalSessions }}</div><div class="stat-lbl">Sessions</div></div>
-    <div class="stat-card"><div class="stat-val">{{ totalAccuracy }}%</div><div class="stat-lbl">Avg accuracy</div></div>
-    <div class="stat-card"><div class="stat-val">{{ bestScore }}/10</div><div class="stat-lbl">Best score</div></div>
-    <div class="stat-card"><div class="stat-val">{{ student?.dailyStreak }}🔥</div><div class="stat-lbl">Streak</div></div>
+    <div class="stat-card">
+      <div class="stat-val">{{ student?.totalSessions }}</div>
+      <div class="stat-lbl">Sessions</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val">{{ totalAccuracy }}%</div>
+      <div class="stat-lbl">Avg accuracy</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val">{{ bestScore }}/10</div>
+      <div class="stat-lbl">Best score</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val">{{ student?.dailyStreak }}🔥</div>
+      <div class="stat-lbl">Streak</div>
+    </div>
   </div>
 
-  <!-- Section journey -->
+  <!-- Journey map with per-sub-level session history -->
   <div class="card">
     <h3>Journey map</h3>
     @for (sec of sections; track sec.id) {
       <div class="sec-block" [class.locked]="!isSecUnlocked(sec.id)">
+
+        <!-- Section header -->
         <div class="sec-head">
           <div class="sec-icon"
             [style.background]="isSecUnlocked(sec.id) ? sec.colorLight : '#F1EFE8'"
@@ -28,6 +42,8 @@
             }
           </div>
         </div>
+
+        <!-- Sub-levels -->
         @if (isSecUnlocked(sec.id)) {
           <div class="sl-steps">
             @for (sl of subLevelsForSection(sec.id); track sl.id) {
@@ -35,34 +51,89 @@
                 [class.done]="slDone(sl.id)"
                 [class.active]="sl.id === student?.currentSubLevelId"
                 [class.locked]="!slUnlocked(sl.id)">
-                <div class="sl-dot">
-                  {{ slDone(sl.id) ? '✓' : sl.id }}
-                </div>
-                <div class="sl-info">
-                  <div class="sl-label">{{ sl.label }}</div>
+
+                <!-- Sub-level row — clickable to expand -->
+                <button class="sl-row"
+                  [disabled]="slAttempts(sl.id) === 0"
+                  (click)="toggleSubLevel(sl.id)">
+                  <div class="sl-dot">
+                    {{ slDone(sl.id) ? '✓' : sl.id }}
+                  </div>
+                  <div class="sl-info">
+                    <div class="sl-label">{{ sl.label }}</div>
+                    @if (slAttempts(sl.id) > 0) {
+                      <div class="sl-stats">
+                        {{ slAttempts(sl.id) }} session(s)
+                        · Best: {{ slBestAcc(sl.id) }}%
+                        @if (!slDone(sl.id)) {
+                          · Pass: {{ slPassStreak(sl.id) }}/{{ sl.passStreakRequired }}
+                        }
+                      </div>
+                    } @else if (slUnlocked(sl.id)) {
+                      <div class="sl-stats">Not attempted yet</div>
+                    } @else {
+                      <div class="sl-stats">Locked</div>
+                    }
+                  </div>
                   @if (slAttempts(sl.id) > 0) {
-                    <div class="sl-stats">
-                      {{ slAttempts(sl.id) }} attempt(s) · Best: {{ slBestAcc(sl.id) }}%
-                      @if (!slDone(sl.id)) {
-                        · Pass streak: {{ slPassStreak(sl.id) }}/{{ sl.passStreakRequired }}
-                      }
+                    <div class="sl-expand">
+                      {{ expandedSl() === sl.id ? '▲' : '▼' }}
                     </div>
-                  } @else if (slUnlocked(sl.id)) {
-                    <div class="sl-stats">Ready to attempt</div>
-                  } @else {
-                    <div class="sl-stats">Locked</div>
                   }
-                </div>
+                </button>
+
+                <!-- Expanded session history for this sub-level -->
+                @if (expandedSl() === sl.id) {
+                  <div class="sl-history">
+                    <div class="sh-header">
+                      <span>Sessions for {{ sl.id }} — {{ sl.label }}</span>
+                    </div>
+                    <div class="sh-table-wrap">
+                      <table class="sh-table">
+                        <thead>
+                          <tr>
+                            <th>#</th>
+                            <th>Date</th>
+                            <th>Score</th>
+                            <th>Accuracy</th>
+                            <th>Avg time</th>
+                            <th>Passed</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          @for (s of sessionsForSubLevel(sl.id); track s.id; let i = $index) {
+                            <tr [class.pass-row]="s.passed" [class.fail-row]="!s.passed">
+                              <td class="s-num">{{ i + 1 }}</td>
+                              <td>{{ s.date }}</td>
+                              <td class="score-cell"
+                                [class.pass]="s.passed"
+                                [class.fail]="!s.passed">
+                                {{ s.score }}/{{ s.total }}
+                              </td>
+                              <td>{{ s.accuracy }}%</td>
+                              <td>{{ s.avgTimeSec }}s</td>
+                              <td class="pass-cell">
+                                {{ s.passed ? '✓' : '✗' }}
+                              </td>
+                            </tr>
+                          }
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                }
+
               </div>
             }
           </div>
         }
+
       </div>
     }
   </div>
 
   <!-- Charts -->
-  @if (sessions.length > 1) {
+  @if (sessions().length > 1) {
     <div class="card">
       <h3>Accuracy — last {{ last10.length }} sessions</h3>
       <canvas #accuracyChart></canvas>
@@ -74,10 +145,10 @@
   }
 
   <!-- Weak spots -->
-  @if (weakSpots.length > 0) {
+  @if (weakSpots().length > 0) {
     <div class="card">
       <h3>⚠️ Weak spots</h3>
-      @for (w of weakSpots; track w.drillType) {
+      @for (w of weakSpots(); track w.drillType) {
         <div class="weak-row">
           <span class="weak-label">{{ w.label }}</span>
           <span class="weak-errors">{{ w.errorCount }} errors</span>
@@ -103,47 +174,11 @@
     </div>
   }
 
-  <!-- Session table -->
-  @if (sessions.length > 0) {
-    <div class="card">
-      <h3>Session history</h3>
-      <div class="table-wrap">
-        <table class="session-table">
-          <thead>
-            <tr>
-              <th>Date</th><th>Sub-level</th><th>Score</th>
-              <th>Accuracy</th><th>Avg time</th><th>Passed</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (s of sessions.slice().reverse(); track s.id) {
-              <tr [class.pass-row]="s.passed" [class.fail-row]="!s.passed">
-                <td>{{ s.date }}</td>
-                <td>
-                  <span class="sl-pill"
-                    [style.background]="sectionColor(s.section) + '22'"
-                    [style.color]="sectionColor(s.section)">
-                    {{ s.subLevelId }}
-                  </span>
-                </td>
-                <td class="score-cell" [class.pass]="s.passed" [class.fail]="!s.passed">
-                  {{ s.score }}/{{ s.total }}
-                </td>
-                <td>{{ s.accuracy }}%</td>
-                <td>{{ s.avgTimeSec }}s</td>
-                <td>{{ s.passed ? '✓' : '✗' }}</td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-    </div>
-  }
-
-  @if (!sessions.length) {
+  @if (!sessions().length) {
     <div class="card empty-state">
       <div class="empty-icon">📊</div>
       <p>No sessions yet — complete a drill to see progress!</p>
     </div>
   }
+
 </div>

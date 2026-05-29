@@ -1,0 +1,72 @@
+<div class="login-page">
+
+  @if (loading()) {
+    <div class="loading">
+      <div class="spinner"></div>
+      <p>Loading...</p>
+    </div>
+  }
+
+  @if (!loading()) {
+    <div class="login-header">
+      <div class="app-icon">🧮</div>
+      <h1>Math Drill Trainer</h1>
+      <p class="sub">Who's practising today?</p>
+    </div>
+
+    <!-- Child cards -->
+    <div class="child-grid">
+      @for (child of children(); track child.id) {
+        <button class="child-card" (click)="loginChild(child)">
+          <div class="child-avatar">{{ child.avatar }}</div>
+          <div class="child-name">{{ child.name }}</div>
+          <div class="child-level">{{ child.student.currentSubLevelId }}</div>
+          <div class="child-streak">
+            @if (child.student.dailyStreak > 0) {
+              🔥 {{ child.student.dailyStreak }}
+            }
+          </div>
+        </button>
+      }
+    </div>
+
+    <!-- Parent button -->
+    <div class="parent-row">
+      <button class="parent-btn" (click)="openParentLogin()">
+        🔐 Parent dashboard
+      </button>
+    </div>
+  }
+
+  <!-- PIN overlay -->
+  @if (showPinEntry()) {
+    <div class="pin-overlay" (click)="closeParentLogin()">
+      <div class="pin-box" (click)="$event.stopPropagation()">
+        <h3>Parent login</h3>
+        <p>Enter your 4-digit PIN</p>
+        <div class="pin-dots">
+          @for (i of [0,1,2,3]; track i) {
+            <div class="pin-dot" [class.filled]="pin.length > i"></div>
+          }
+        </div>
+        <input
+          type="password"
+          inputmode="numeric"
+          maxlength="4"
+          [(ngModel)]="pin"
+          (keydown)="onPinKey($event)"
+          class="pin-hidden-input"
+          autofocus
+          placeholder="PIN" />
+        @if (pinError()) {
+          <div class="pin-error">{{ pinError() }}</div>
+        }
+        <div class="pin-actions">
+          <button class="btn" (click)="closeParentLogin()">Cancel</button>
+          <button class="btn btn-primary" (click)="submitPin()">Enter</button>
+        </div>
+      </div>
+    </div>
+  }
+
+</div>

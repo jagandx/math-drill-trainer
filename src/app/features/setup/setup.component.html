@@ -1,0 +1,89 @@
+<div class="setup-page">
+
+  <div class="setup-header">
+    <div class="app-icon">🧮</div>
+    <h1>Welcome to Math Drill Trainer</h1>
+    <p class="sub">Let's get you set up</p>
+  </div>
+
+  <!-- Step indicators -->
+  <div class="steps">
+    <div class="step" [class.active]="step() >= 1" [class.done]="step() > 1">
+      <div class="step-circle">{{ step() > 1 ? '✓' : '1' }}</div>
+      <div class="step-label">Parent PIN</div>
+    </div>
+    <div class="step-line" [class.done]="step() > 1"></div>
+    <div class="step" [class.active]="step() >= 2">
+      <div class="step-circle">2</div>
+      <div class="step-label">Add child</div>
+    </div>
+  </div>
+
+  <!-- Step 1: PIN -->
+  @if (step() === 1) {
+    <div class="card setup-card">
+      <h2>🔐 Create parent PIN</h2>
+      <p>This PIN protects the parent dashboard.</p>
+
+      <div class="field">
+        <label>PIN (4 digits)</label>
+        <input type="password" inputmode="numeric" maxlength="4"
+               [(ngModel)]="pin" (keydown)="onPinKey($event)"
+               class="pin-input" placeholder="••••" autofocus />
+      </div>
+      <div class="field">
+        <label>Confirm PIN</label>
+        <input type="password" inputmode="numeric" maxlength="4"
+               [(ngModel)]="pinConfirm" (keydown)="onPinKey($event)"
+               class="pin-input" placeholder="••••" />
+      </div>
+
+      @if (pinError()) {
+        <div class="error">{{ pinError() }}</div>
+      }
+
+      <button class="btn btn-primary full" (click)="submitPin()">
+        Continue →
+      </button>
+    </div>
+  }
+
+  <!-- Step 2: Child -->
+  @if (step() === 2) {
+    <div class="card setup-card">
+      <h2>👦 Add your first child</h2>
+      <p>You can add more children later from the parent dashboard.</p>
+
+      <div class="field">
+        <label>Child's name</label>
+        <input type="text" [(ngModel)]="childName"
+               (keydown)="onChildKey($event)"
+               class="text-input" placeholder="e.g. Arjun" autofocus />
+      </div>
+
+      <div class="field">
+        <label>Choose avatar</label>
+        <div class="avatar-grid">
+          @for (a of avatars; track a) {
+            <button class="avatar-btn"
+              [class.selected]="childAvatar() === a"
+              (click)="selectAvatar(a)">
+              {{ a }}
+            </button>
+          }
+        </div>
+      </div>
+
+      @if (childError()) {
+        <div class="error">{{ childError() }}</div>
+      }
+
+      <button class="btn btn-primary full"
+        [disabled]="saving()"
+        (click)="submitChild()">
+        {{ saving() ? 'Setting up...' : '🚀 Start learning!' }}
+      </button>
+    </div>
+  }
+
+</div>

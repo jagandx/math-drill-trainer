@@ -1,24 +1,20 @@
 <div class="home">
 
-  <!-- Name setup -->
-  @if (!student?.name) {
-    <div class="card setup-card">
-      <h2>👋 Welcome!</h2>
-      <p>What's your name?</p>
-      <div class="name-row">
-        <input [(ngModel)]="nameInput" placeholder="Enter your name"
-               (keydown.enter)="saveName()" class="name-input" autofocus />
-        <button class="btn btn-primary" (click)="saveName()">Let's go →</button>
-      </div>
+  <!-- Loading -->
+  @if (!child()) {
+    <div class="card loading-card">
+      <div class="spinner"></div>
+      <p>Loading...</p>
     </div>
   }
 
-  @if (student?.name) {
+  <!-- Main content -->
+  @if (child()) {
 
     <!-- Header -->
     <div class="header">
       <div class="greet">
-        <span class="hi">Hi, {{ student?.name }}! 👋</span>
+        <span class="hi">{{ child()!.avatar }} Hi, {{ child()!.name }}!</span>
         <span class="streak">🔥 {{ student?.dailyStreak }}-day streak</span>
       </div>
       <div class="level-badge"
@@ -49,13 +45,13 @@
     <div class="card drill-card">
       <h3>Current drill</h3>
       <p class="drill-desc">{{ currentSubLevel?.id }} — {{ currentSubLevel?.label }}</p>
-      <p class="drill-hint">⏱ Time limit: {{ currentSubLevel?.timeLimitSec }}s per question</p>
+      <p class="drill-hint">⏱ {{ currentSubLevel?.timeLimitSec }}s per question</p>
       <button class="btn btn-primary start-btn" (click)="startDrill()">
         ⚡ Start {{ currentSubLevel?.id }} Drill
       </button>
     </div>
 
-    <!-- Section overview -->
+    <!-- Journey map -->
     <div class="card">
       <h3>Your journey</h3>
       <div class="sections-list">
@@ -116,5 +112,6 @@
         </div>
       </div>
     }
+
   }
 </div>

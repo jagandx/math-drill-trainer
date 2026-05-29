@@ -1,104 +1,82 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { FormsModule } from '@angular/forms';
-import { StorageService } from '../../core/storage.service';
 import {
-  AppState,
-  SUB_LEVELS,
-  SECTIONS,
-  DrillType,
-  getSubLevel,
-  isSectionUnlocked,
-  DRILL_LABELS,
+  SUB_LEVELS, SECTIONS, DrillType,
+  getSubLevel, isSectionUnlocked, DRILL_LABELS, ChildProfile, Session
 } from '../../core/models';
+import { AuthService } from '../../core/auth.service';
+import { DbService }   from '../../core/db.service';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [FormsModule],
+  imports: [],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss',
 })
 export class HomeComponent implements OnInit {
-  state = signal<AppState | null>(null);
-  nameInput = '';
+  child    = signal<ChildProfile | null>(null);
+  sessions = signal<Session[]>([]);
   sections = SECTIONS;
 
   constructor(
-    private storage: StorageService,
+    private db:   DbService,
+    private auth: AuthService,
     private router: Router,
   ) {}
 
-  ngOnInit() {
-    const s = this.storage.load();
-    this.state.set(s);
-    this.nameInput = s.student.name;
+  async ngOnInit() {
+    await this.auth.refreshChild();
+    const c = this.auth.child();
+    this.child.set(c);
+    if (c) {
+      const s = await this.db.getSessionsForChild(c.id);
+      this.sessions.set((s as Session[]).slice(-5).reverse());
+    }
   }
 
-  get student() {
-    return this.state()?.student;
-  }
-  get progress() {
-    return this.student?.subLevelProgress ?? {};
-  }
+  // ── Getters ─────────────────────────────────────────────────────────────
+  get student()   { return this.child()?.student; }
+  get progress()  { return this.student?.subLevelProgress ?? {}; }
 
   get currentSubLevel() {
     return getSubLevel(this.student?.currentSubLevelId ?? 'A1');
   }
-
   get currentSection() {
-    return SECTIONS.find((s) => s.id === this.currentSubLevel?.section);
+    return SECTIONS.find(s => s.id === this.currentSubLevel?.section);
   }
-
-  get recentSessions() {
-    return (this.state()?.sessions ?? []).slice(-5).reverse();
-  }
+  get recentSessions() { return this.sessions(); }
 
   get subLevelPassStreak() {
     const id = this.student?.currentSubLevelId ?? 'A1';
-    const prog = this.student?.subLevelProgress[id];
-    return prog?.consecutivePassCount ?? 0;
+    return this.student?.subLevelProgress?.[id]?.consecutivePassCount ?? 0;
   }
-
   get passStreakRequired() {
     return getSubLevel(this.student?.currentSubLevelId ?? 'A1')?.passStreakRequired ?? 2;
   }
 
-  isSectionUnlocked(sectionId: string) {
+  // ── Section helpers ──────────────────────────────────────────────────────
+  isSectionUnlocked(sectionId: string): boolean {
     return isSectionUnlocked(sectionId as any, this.progress);
   }
-
   subLevelsForSection(sectionId: string) {
-    return SUB_LEVELS.filter((sl) => sl.section === sectionId);
+    return SUB_LEVELS.filter(sl => sl.section === sectionId);
   }
-
-  subLevelDone(id: string) {
-    return this.progress[id]?.completed ?? false;
+  subLevelDone(id: string)     { return this.progress[id]?.completed  ?? false; }
+  subLevelUnlocked(id: string) { return this.progress[id]?.unlocked   ?? false; }
+  doneCountForSection(sectionId: string): number {
+    return this.subLevelsForSection(sectionId).filter(sl => this.subLevelDone(sl.id)).length;
   }
-
-  subLevelUnlocked(id: string) {
-    return this.progress[id]?.unlocked ?? false;
-  }
-
   drillLabel(type: string): string {
     return DRILL_LABELS[type as DrillType] ?? type;
   }
 
-  saveName() {
-    if (!this.nameInput.trim()) return;
-    this.storage.updateStudent({ name: this.nameInput.trim() });
-    this.state.set(this.storage.load());
-  }
-
+  // ── Navigation ───────────────────────────────────────────────────────────
   startDrill(subLevelId?: string) {
     const id = subLevelId ?? this.student?.currentSubLevelId ?? 'A1';
     const sl = getSubLevel(id);
     this.router.navigate(['/drill'], {
-      queryParams: { subLevelId: id, drillType: sl?.drillType },
+      queryParams: { subLevelId: id, drillType: sl?.drillType }
     });
-  }
-
-  doneCountForSection(sectionId: string): number {
-    return this.subLevelsForSection(sectionId).filter((sl) => this.subLevelDone(sl.id)).length;
   }
 }

@@ -1,21 +1,22 @@
-<nav class="nav">
-  <a routerLink="/home"     routerLinkActive="active" class="nav-item">
-    <span class="nav-icon">🏠</span><span class="nav-lbl">Home</span>
-  </a>
-  <a routerLink="/drill"    routerLinkActive="active" class="nav-item">
-    <span class="nav-icon">⚡</span><span class="nav-lbl">Drill</span>
-  </a>
-  <a routerLink="/progress" routerLinkActive="active" class="nav-item">
-    <span class="nav-icon">📈</span><span class="nav-lbl">Progress</span>
-  </a>
-  <a routerLink="/parent"   routerLinkActive="active" class="nav-item">
-    <span class="nav-icon">👨‍👩‍👦</span><span class="nav-lbl">Parent</span>
-  </a>
-  <a routerLink="/settings" routerLinkActive="active" class="nav-item">
-    <span class="nav-icon">⚙️</span><span class="nav-lbl">Settings</span>
-  </a>
-</nav>
+@if (showNav) {
+  <nav class="nav">
+    <a routerLink="/home"     routerLinkActive="active" class="nav-item">
+      <span class="nav-icon">🏠</span><span class="nav-lbl">Home</span>
+    </a>
+    <a routerLink="/drill"    routerLinkActive="active" class="nav-item">
+      <span class="nav-icon">⚡</span><span class="nav-lbl">Drill</span>
+    </a>
+    <a routerLink="/progress" routerLinkActive="active" class="nav-item">
+      <span class="nav-icon">📈</span><span class="nav-lbl">Progress</span>
+    </a>
+    <div class="nav-child">
+      <span class="child-av">{{ childAvatar }}</span>
+      <span class="child-nm">{{ childName }}</span>
+    </div>
+    <button class="nav-logout" (click)="logout()" title="Switch user">↩</button>
+  </nav>
+}
 
-<main class="main-content">
+<main [class.with-nav]="showNav">
   <router-outlet />
 </main>

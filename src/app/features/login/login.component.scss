@@ -1,0 +1,102 @@
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  background: var(--bg);
+}
+
+.loading {
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+  .spinner {
+    width: 36px; height: 36px; border-radius: 50%;
+    border: 3px solid var(--border);
+    border-top-color: var(--purple);
+    animation: spin .8s linear infinite;
+  }
+  p { font-size: 14px; color: var(--text-sec); }
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.login-header {
+  text-align: center; margin-bottom: 32px;
+  .app-icon { font-size: 48px; margin-bottom: 8px; }
+  h1 { font-size: 22px; font-weight: 500; color: var(--text-pri); margin-bottom: 4px; }
+  .sub { font-size: 14px; color: var(--text-sec); }
+}
+
+.child-grid {
+  display: flex; flex-wrap: wrap; gap: 16px;
+  justify-content: center; margin-bottom: 32px;
+  max-width: 420px;
+}
+
+.child-card {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 20px 24px;
+  cursor: pointer; transition: all .2s; min-width: 110px;
+
+  &:hover {
+    border-color: var(--purple);
+    background: var(--purple-l);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(83,74,183,.15);
+  }
+  &:active { transform: scale(0.97); }
+
+  .child-avatar { font-size: 40px; line-height: 1; }
+  .child-name   { font-size: 14px; font-weight: 500; color: var(--text-pri); }
+  .child-level  { font-size: 11px; color: var(--purple); font-weight: 500;
+                  background: var(--purple-l); padding: 2px 8px; border-radius: 20px; }
+  .child-streak { font-size: 12px; color: var(--amber); min-height: 18px; }
+}
+
+.parent-row {
+  margin-top: 8px;
+}
+.parent-btn {
+  background: transparent; border: 1px solid var(--border);
+  border-radius: var(--radius-md); padding: 10px 24px;
+  font-size: 13px; color: var(--text-sec); cursor: pointer;
+  transition: all .15s;
+  &:hover { background: var(--card-bg); color: var(--text-pri); }
+}
+
+// PIN overlay
+.pin-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.5);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 200;
+}
+.pin-box {
+  background: var(--card-bg); border-radius: var(--radius-lg);
+  padding: 28px 32px; text-align: center; min-width: 280px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.2);
+
+  h3 { font-size: 17px; font-weight: 500; margin-bottom: 4px; }
+  p  { font-size: 13px; color: var(--text-sec); margin-bottom: 20px; }
+}
+.pin-dots {
+  display: flex; gap: 12px; justify-content: center; margin-bottom: 16px;
+  .pin-dot {
+    width: 14px; height: 14px; border-radius: 50%;
+    border: 2px solid var(--border); background: transparent;
+    transition: all .15s;
+    &.filled { background: var(--purple); border-color: var(--purple); }
+  }
+}
+.pin-hidden-input {
+  width: 100%; padding: 10px; text-align: center;
+  border: 1px solid var(--border); border-radius: var(--radius-md);
+  font-size: 18px; letter-spacing: 8px; margin-bottom: 8px;
+  &:focus { outline: 2px solid var(--purple); }
+}
+.pin-error {
+  font-size: 12px; color: var(--coral); margin-bottom: 12px;
+}
+.pin-actions {
+  display: flex; gap: 8px; justify-content: center; margin-top: 8px;
+}

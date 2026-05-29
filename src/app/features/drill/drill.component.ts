@@ -4,9 +4,18 @@ import { FormsModule } from '@angular/forms';
 import { DrillEngineService } from '../../core/drill-engine.service';
 import { StorageService } from '../../core/storage.service';
 import {
-  Question, QuestionResult, Session, DrillType,
-  SUB_LEVELS, getSubLevel, SubLevel, MCQQuestion, NumericQuestion
+  Question,
+  QuestionResult,
+  Session,
+  DrillType,
+  SUB_LEVELS,
+  getSubLevel,
+  SubLevel,
+  MCQQuestion,
+  NumericQuestion,
 } from '../../core/models';
+import { AuthService } from '../../core/auth.service';
+import { DbService } from '../../core/db.service';
 
 @Component({
   selector: 'app-drill',
@@ -16,23 +25,22 @@ import {
   styleUrl: './drill.component.scss',
 })
 export class DrillComponent implements OnInit, OnDestroy {
-
   // Config
-  subLevelId    = 'A1';
-  subLevelDef   = signal<SubLevel | null>(null);
+  subLevelId = 'A1';
+  subLevelDef = signal<SubLevel | null>(null);
   totalQuestions = 10;
 
   // State
-  phase         = signal<'idle' | 'running' | 'finished'>('idle');
-  currentQ      = signal<Question | null>(null);
-  qIndex        = signal(0);
-  userAnswer    = '';          // for numeric
+  phase = signal<'idle' | 'running' | 'finished'>('idle');
+  currentQ = signal<Question | null>(null);
+  qIndex = signal(0);
+  userAnswer = ''; // for numeric
   selectedOption = signal(-1); // for MCQ
-  feedback      = signal<'correct' | 'wrong' | 'timeout' | null>(null);
-  timerPct      = signal(100);
-  liveCorrect   = signal(0);
-  liveStreak    = signal(0);
-  bestStreak    = 0;
+  feedback = signal<'correct' | 'wrong' | 'timeout' | null>(null);
+  timerPct = signal(100);
+  liveCorrect = signal(0);
+  liveStreak = signal(0);
+  bestStreak = 0;
   currentStreak = 0;
 
   private results: QuestionResult[] = [];
@@ -41,20 +49,23 @@ export class DrillComponent implements OnInit, OnDestroy {
 
   constructor(
     private engine: DrillEngineService,
-    private storage: StorageService,
+    private db: DbService,
+    private auth: AuthService,
     private router: Router,
     private route: ActivatedRoute,
   ) {}
 
   ngOnInit() {
-    this.route.queryParams.subscribe(p => {
-      this.subLevelId  = p['subLevelId'] ?? 'A1';
-      const sl         = getSubLevel(this.subLevelId);
+    this.route.queryParams.subscribe((p) => {
+      this.subLevelId = p['subLevelId'] ?? 'A1';
+      const sl = getSubLevel(this.subLevelId);
       this.subLevelDef.set(sl ?? null);
     });
   }
 
-  ngOnDestroy() { this.clearTimer(); }
+  ngOnDestroy() {
+    this.clearTimer();
+  }
 
   // ── Type guards ─────────────────────────────────────────────────────────────
   isNumeric(q: Question | null): q is NumericQuestion {
@@ -95,7 +106,10 @@ export class DrillComponent implements OnInit, OnDestroy {
 
   // ── Question flow ───────────────────────────────────────────────────────────
   private nextQuestion() {
-    if (this.qIndex() >= this.totalQuestions) { this.finish(); return; }
+    if (this.qIndex() >= this.totalQuestions) {
+      this.finish();
+      return;
+    }
     const sl = this.subLevelDef();
     if (!sl) return;
     const q = this.engine.generate(sl.drillType);
@@ -114,7 +128,10 @@ export class DrillComponent implements OnInit, OnDestroy {
       const elapsed = (Date.now() - this.qStart) / 1000;
       const pct = Math.max(0, 100 - (elapsed / this.timeLimitSec) * 100);
       this.timerPct.set(pct);
-      if (elapsed >= this.timeLimitSec) { this.clearTimer(); this.timeUp(); }
+      if (elapsed >= this.timeLimitSec) {
+        this.clearTimer();
+        this.timeUp();
+      }
     }, 80);
   }
 
@@ -140,8 +157,8 @@ export class DrillComponent implements OnInit, OnDestroy {
     if (this.feedback()) return; // already answered
     this.clearTimer();
     this.selectedOption.set(index);
-    const timeSec  = parseFloat(((Date.now() - this.qStart) / 1000).toFixed(1));
-    const correct  = index === q.correctIndex;
+    const timeSec = parseFloat(((Date.now() - this.qStart) / 1000).toFixed(1));
+    const correct = index === q.correctIndex;
     this.recordResult(q, q.options[index], q.options[q.correctIndex], correct, timeSec, false);
     this.feedback.set(correct ? 'correct' : 'wrong');
     setTimeout(() => this.advance(), correct ? 800 : 1600);
@@ -156,18 +173,21 @@ export class DrillComponent implements OnInit, OnDestroy {
   }
 
   private advance() {
-    this.qIndex.update(i => i + 1);
+    this.qIndex.update((i) => i + 1);
     if (this.qIndex() < this.totalQuestions) this.nextQuestion();
     else this.finish();
   }
 
   private recordResult(
-    q: Question, userAnswer: string | null,
-    expected: string, correct: boolean,
-    timeSec: number, timedOut: boolean
+    q: Question,
+    userAnswer: string | null,
+    expected: string,
+    correct: boolean,
+    timeSec: number,
+    timedOut: boolean,
   ) {
     if (correct) {
-      this.liveCorrect.update(c => c + 1);
+      this.liveCorrect.update((c) => c + 1);
       this.currentStreak++;
       if (this.currentStreak > this.bestStreak) this.bestStreak = this.currentStreak;
       this.liveStreak.set(this.currentStreak);
@@ -177,48 +197,55 @@ export class DrillComponent implements OnInit, OnDestroy {
     }
     const sl = this.subLevelDef();
     this.results.push({
-      question:   q.display,
+      question: q.display,
       expected,
       userAnswer,
       correct,
       timeSec,
       timedOut,
-      drillType:  q.drillType,
+      drillType: q.drillType,
       subLevelId: this.subLevelId,
     });
   }
 
-  private finish() {
+  // Replace finish() method
+  private async finish() {
     this.clearTimer();
     this.phase.set('finished');
-    const score    = this.results.filter(r => r.correct).length;
-    const total    = this.results.length;
+    const score = this.results.filter((r) => r.correct).length;
+    const total = this.results.length;
     const accuracy = Math.round((score / total) * 100);
-    const avgTime  = parseFloat(
-      (this.results.reduce((s, r) => s + r.timeSec, 0) / total).toFixed(1)
+    const avgTime = parseFloat(
+      (this.results.reduce((s, r) => s + r.timeSec, 0) / total).toFixed(1),
     );
-    const sl     = this.subLevelDef();
+    const sl = this.subLevelDef();
     const passed = score >= (sl?.passScore ?? 8);
     const session: Session = {
-      id:                   `${Date.now()}`,
-      date:                 new Date().toISOString().split('T')[0],
-      subLevelId:           this.subLevelId,
-      drillType:            sl?.drillType ?? 'add_1_1',
-      section:              sl?.section   ?? 'addition',
-      score, total, accuracy,
-      avgTimeSec:           avgTime,
-      bestStreakInSession:  this.bestStreak,
-      timeLimitSec:         this.timeLimitSec,
-      questions:            this.results,
+      id: `${Date.now()}`,
+      date: new Date().toISOString().split('T')[0],
+      subLevelId: this.subLevelId,
+      drillType: sl?.drillType ?? 'add_1_1',
+      section: sl?.section ?? 'addition',
+      score,
+      total,
+      accuracy,
+      avgTimeSec: avgTime,
+      bestStreakInSession: this.bestStreak,
+      timeLimitSec: this.timeLimitSec,
+      questions: this.results,
       passed,
     };
-    const newState = this.storage.saveSession(session);
+    const childId = this.auth.childId();
+    const updatedChild = childId ? await this.db.saveSession(childId, session) : null;
+    if (updatedChild) await this.auth.refreshChild();
     this.router.navigate(['/summary'], {
-      state: { session, student: newState.student }
+      state: { session, student: updatedChild?.student ?? null },
     });
   }
 
-  private clearTimer() { clearInterval(this.timerInt); }
+  private clearTimer() {
+    clearInterval(this.timerInt);
+  }
 
   get timerColor(): string {
     const p = this.timerPct();

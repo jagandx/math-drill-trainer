@@ -1,105 +1,227 @@
 <div class="parent-page">
-
-  <div class="page-header">
-    <h2>👨‍👩‍👦 Parent Dashboard</h2>
-    <p class="sub">Tracking {{ student?.name }}'s progress</p>
-  </div>
-
-  <!-- Summary stats -->
-  <div class="summary-grid">
-    <div class="sum-card purple">
-      <div class="sum-val">{{ currentSubLevelId }}</div>
-      <div class="sum-lbl">Current sub-level</div>
+  <!-- Header -->
+  <div class="parent-header">
+    <div class="header-left">
+      <h2>👨‍👩‍👦 Parent Dashboard</h2>
     </div>
-    <div class="sum-card teal">
-      <div class="sum-val">{{ avgAccuracy }}%</div>
-      <div class="sum-lbl">Avg accuracy</div>
-    </div>
-    <div class="sum-card amber">
-      <div class="sum-val">{{ passRate }}%</div>
-      <div class="sum-lbl">Pass rate</div>
-    </div>
-    <div class="sum-card green">
-      <div class="sum-val">{{ improvementTrend }}</div>
-      <div class="sum-lbl">Improvement</div>
-    </div>
-    <div class="sum-card coral">
-      <div class="sum-val">{{ student?.dailyStreak }}🔥</div>
-      <div class="sum-lbl">Day streak</div>
-    </div>
-    <div class="sum-card gray">
-      <div class="sum-val">{{ totalSessions }}</div>
-      <div class="sum-lbl">Total sessions</div>
+    <div class="header-right">
+      <button class="icon-btn" (click)="goSettings()" title="Settings">⚙️</button>
+      <button class="icon-btn" (click)="openChangePIN()" title="Change PIN">🔑</button>
+      <button class="icon-btn" (click)="logout()" title="Logout">↩</button>
     </div>
   </div>
+  <!-- Child selector tabs -->
+  <div class="child-tabs">
+    @for (child of children(); track child.id) {
+      <button
+        class="child-tab"
+        [class.active]="selectedChild()?.id === child.id"
+        (click)="selectChild(child)"
+      >
+        {{ child.avatar }} {{ child.name }}
+      </button>
+    }
+    @if (children().length < 3) {
+      <button class="add-child-tab" (click)="openAddChild()">+ Add child</button>
+    }
+  </div>
 
-  <!-- Weak spots -->
-  @if (weakSpots.length > 0) {
-    <div class="card">
-      <h3>⚠️ Areas needing attention</h3>
-      @for (w of weakSpots; track w.drillType) {
-        <div class="weak-row">
-          <span class="weak-label">{{ w.label }}</span>
-          <div class="weak-bar-wrap">
-            <div class="weak-bar" [style.width.%]="Math.min(100, w.errorCount * 10)"></div>
+  @if (selectedChild()) {
+    <!-- Summary stats -->
+    <div class="summary-grid">
+      <div class="sum-card purple">
+        <div class="sum-val">{{ student?.currentSubLevelId }}</div>
+        <div class="sum-lbl">Current sub-level</div>
+      </div>
+      <div class="sum-card teal">
+        <div class="sum-val">{{ avgAccuracy }}%</div>
+        <div class="sum-lbl">Avg accuracy</div>
+      </div>
+      <div class="sum-card amber">
+        <div class="sum-val">{{ passRate }}%</div>
+        <div class="sum-lbl">Pass rate</div>
+      </div>
+      <div class="sum-card green">
+        <div class="sum-val">{{ improvementTrend }}</div>
+        <div class="sum-lbl">Improvement</div>
+      </div>
+      <div class="sum-card coral">
+        <div class="sum-val">{{ student?.dailyStreak }}🔥</div>
+        <div class="sum-lbl">Day streak</div>
+      </div>
+      <div class="sum-card gray">
+        <div class="sum-val">{{ student?.totalSessions }}</div>
+        <div class="sum-lbl">Sessions</div>
+      </div>
+    </div>
+
+    <!-- Weak spots -->
+    @if (weakSpots.length > 0) {
+      <div class="card">
+        <h3>⚠️ Areas needing attention</h3>
+        @for (w of weakSpots; track w.drillType) {
+          <div class="weak-row">
+            <span class="weak-label">{{ w.label }}</span>
+            <div class="weak-bar-wrap">
+              <div class="weak-bar" [style.width.%]="Math.min(100, w.errorCount * 10)"></div>
+            </div>
+            <span class="weak-count">{{ w.errorCount }} errors</span>
           </div>
-          <span class="weak-count">{{ w.errorCount }} errors</span>
+        }
+      </div>
+    }
+
+    <!-- Download + Delete -->
+    <div class="card">
+      <h3>📥 Actions</h3>
+      <div class="action-btns">
+        <button class="btn btn-primary" (click)="downloadCSV()">⬇ Download CSV</button>
+        <button class="btn btn-danger" (click)="deleteChild(selectedChild()!)">
+          🗑 Remove {{ selectedChild()?.name }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Session table -->
+    @if (sessions.length > 0) {
+      <div class="card">
+        <h3>Session history — {{ selectedChild()?.name }}</h3>
+        <div class="table-wrap">
+          <table class="session-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Sub-level</th>
+                <th>Topic</th>
+                <th>Score</th>
+                <th>Accuracy</th>
+                <th>Avg time</th>
+                <th>Passed</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (s of sessions; track s.id) {
+                <tr [class.pass-row]="s.passed" [class.fail-row]="!s.passed">
+                  <td>{{ s.date }}</td>
+                  <td>
+                    <span
+                      class="sl-pill"
+                      [style.background]="sectionColor(s.section) + '22'"
+                      [style.color]="sectionColor(s.section)"
+                    >
+                      {{ s.subLevelId }}
+                    </span>
+                  </td>
+                  <td class="topic-cell">{{ drillLabel(s.drillType) }}</td>
+                  <td class="score-cell" [class.pass]="s.passed" [class.fail]="!s.passed">
+                    {{ s.score }}/{{ s.total }}
+                  </td>
+                  <td>{{ s.accuracy }}%</td>
+                  <td>{{ s.avgTimeSec }}s</td>
+                  <td class="pass-icon">{{ s.passed ? '✓' : '✗' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
         </div>
-      }
+      </div>
+    }
+
+    @if (!sessions.length) {
+      <div class="card empty-state">
+        <div class="empty-icon">📋</div>
+        <p>No sessions yet for {{ selectedChild()?.name }}.</p>
+      </div>
+    }
+  }
+
+  @if (!selectedChild() && children().length === 0) {
+    <div class="card empty-state">
+      <div class="empty-icon">👦</div>
+      <p>No children added yet.</p>
+      <button class="btn btn-primary" (click)="openAddChild()">Add first child</button>
     </div>
   }
 
-  <!-- Downloads -->
-  <div class="card">
-    <h3>📥 Download logs</h3>
-    <p class="download-note">Export session data for your records</p>
-    <div class="download-btns">
-      <button class="btn btn-primary" (click)="downloadCSV()">⬇ Download CSV</button>
-      <button class="btn" (click)="downloadReport()">📄 Text Report</button>
-    </div>
-  </div>
-
-  <!-- Session table -->
-  @if (sessions.length > 0) {
-    <div class="card">
-      <h3>All sessions</h3>
-      <div class="table-wrap">
-        <table class="session-table">
-          <thead>
-            <tr>
-              <th>Date</th><th>Sub-level</th><th>Score</th>
-              <th>Accuracy</th><th>Avg time</th><th>Passed</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (s of sessions; track s.id) {
-              <tr [class.pass-row]="s.passed" [class.fail-row]="!s.passed">
-                <td>{{ s.date }}</td>
-                <td>
-                  <span class="sl-pill"
-                    [style.background]="sectionColor(s.section) + '22'"
-                    [style.color]="sectionColor(s.section)">
-                    {{ s.subLevelId }}
-                  </span>
-                </td>
-                <td class="score-cell" [class.pass]="s.passed" [class.fail]="!s.passed">
-                  {{ s.score }}/{{ s.total }}
-                </td>
-                <td>{{ s.accuracy }}%</td>
-                <td>{{ s.avgTimeSec }}s</td>
-                <td>{{ s.passed ? '✓' : '✗' }}</td>
-              </tr>
+  <!-- Add child overlay -->
+  @if (showAddChild()) {
+    <div class="overlay" (click)="closeAddChild()">
+      <div class="overlay-box" (click)="$event.stopPropagation()">
+        <h3>Add child</h3>
+        <div class="field">
+          <label>Name</label>
+          <input
+            type="text"
+            [(ngModel)]="newChildName"
+            class="text-input"
+            placeholder="Child's name"
+            autofocus
+          />
+        </div>
+        <div class="field">
+          <label>Avatar</label>
+          <div class="avatar-grid">
+            @for (a of avatars; track a) {
+              <button
+                class="avatar-btn"
+                [class.selected]="newChildAvatar() === a"
+                (click)="selectAvatar(a)"
+              >
+                {{ a }}
+              </button>
             }
-          </tbody>
-        </table>
+          </div>
+        </div>
+        @if (addError()) {
+          <div class="error">{{ addError() }}</div>
+        }
+        <div class="overlay-actions">
+          <button class="btn" (click)="closeAddChild()">Cancel</button>
+          <button class="btn btn-primary" (click)="addChild()">Add</button>
+        </div>
       </div>
     </div>
   }
 
-  @if (!sessions.length) {
-    <div class="card empty-state">
-      <div class="empty-icon">📋</div>
-      <p>No sessions yet. Have {{ student?.name }} complete a drill first!</p>
+  <!-- Change PIN overlay -->
+  @if (showChangePIN()) {
+    <div class="overlay" (click)="closeChangePIN()">
+      <div class="overlay-box" (click)="$event.stopPropagation()">
+        <h3>Change PIN</h3>
+        @if (pinSaved()) {
+          <div class="success-msg">✓ PIN changed successfully!</div>
+        } @else {
+          <div class="field">
+            <label>Current PIN</label>
+            <input
+              type="password"
+              inputmode="numeric"
+              maxlength="4"
+              [(ngModel)]="oldPin"
+              class="pin-input"
+              placeholder="••••"
+            />
+          </div>
+          <div class="field">
+            <label>New PIN</label>
+            <input
+              type="password"
+              inputmode="numeric"
+              maxlength="4"
+              [(ngModel)]="newPin"
+              class="pin-input"
+              placeholder="••••"
+            />
+          </div>
+          @if (pinError()) {
+            <div class="error">{{ pinError() }}</div>
+          }
+          <div class="overlay-actions">
+            <button class="btn" (click)="closeChangePIN()">Cancel</button>
+            <button class="btn btn-primary" (click)="submitChangePIN()">Save</button>
+          </div>
+        }
+      </div>
     </div>
   }
 </div>

@@ -1,0 +1,71 @@
+.setup-page {
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 24px 16px; background: var(--bg);
+}
+
+.setup-header {
+  text-align: center; margin-bottom: 24px;
+  .app-icon { font-size: 44px; margin-bottom: 8px; }
+  h1 { font-size: 20px; font-weight: 500; margin-bottom: 4px; }
+  .sub { font-size: 13px; color: var(--text-sec); }
+}
+
+.steps {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 24px;
+}
+.step {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  .step-circle {
+    width: 32px; height: 32px; border-radius: 50%;
+    border: 2px solid var(--border); background: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 500; color: var(--text-sec);
+    transition: all .2s;
+  }
+  .step-label { font-size: 11px; color: var(--text-sec); }
+  &.active .step-circle { border-color: var(--purple); color: var(--purple); }
+  &.done  .step-circle  { background: var(--green); border-color: var(--green); color: #fff; }
+}
+.step-line {
+  width: 40px; height: 2px; background: var(--border);
+  margin-bottom: 16px; transition: background .2s;
+  &.done { background: var(--green); }
+}
+
+.setup-card {
+  width: 100%; max-width: 360px;
+  h2 { font-size: 17px; font-weight: 500; margin-bottom: 4px; }
+  p  { font-size: 13px; color: var(--text-sec); margin-bottom: 20px; }
+}
+
+.field {
+  margin-bottom: 14px;
+  label { font-size: 12px; font-weight: 500; color: var(--text-sec); display: block; margin-bottom: 6px; }
+}
+
+.pin-input, .text-input {
+  width: 100%; padding: 10px 14px; border-radius: var(--radius-md);
+  border: 1px solid var(--border); font-size: 16px;
+  &:focus { outline: 2px solid var(--purple); }
+}
+.pin-input { letter-spacing: 8px; text-align: center; font-size: 20px; }
+
+.avatar-grid {
+  display: flex; flex-wrap: wrap; gap: 8px;
+}
+.avatar-btn {
+  width: 44px; height: 44px; border-radius: var(--radius-md);
+  border: 2px solid var(--border); background: #fff;
+  font-size: 22px; cursor: pointer; transition: all .15s;
+  display: flex; align-items: center; justify-content: center;
+  &.selected { border-color: var(--purple); background: var(--purple-l); }
+  &:hover    { border-color: var(--purple); }
+}
+
+.error {
+  font-size: 12px; color: var(--coral); margin-bottom: 12px;
+}
+.full { width: 100%; padding: 12px; font-size: 15px; margin-top: 8px; }

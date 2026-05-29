@@ -13,7 +13,8 @@
   position: sticky;
   top: 0;
   z-index: 100;
-  gap: 4px;
+  gap: 2px;
+  align-items: center;
 
   .nav-item {
     display: flex;
@@ -35,12 +36,31 @@
       .nav-lbl { color: var(--purple); }
     }
   }
+
+  .nav-child {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 4px 8px;
+    .child-av { font-size: 18px; line-height: 1; }
+    .child-nm { font-size: 9px; color: var(--text-sec); margin-top: 2px;
+                max-width: 40px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  }
+
+  .nav-logout {
+    width: 32px; height: 32px; border-radius: 8px;
+    border: 1px solid var(--border); background: transparent;
+    font-size: 14px; cursor: pointer; flex-shrink: 0;
+    &:hover { background: var(--bg); }
+  }
 }
 
-.main-content {
+main {
   flex: 1;
   max-width: 640px;
   width: 100%;
   margin: 0 auto;
   padding: 20px 16px 40px;
+
+  &.with-nav { padding-top: 16px; }
 }
