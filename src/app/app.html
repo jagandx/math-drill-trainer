@@ -9,11 +9,21 @@
     <a routerLink="/progress" routerLinkActive="active" class="nav-item">
       <span class="nav-icon">📈</span><span class="nav-lbl">Progress</span>
     </a>
+
+    <!-- child info -->
     <div class="nav-child">
       <span class="child-av">{{ childAvatar }}</span>
       <span class="child-nm">{{ childName }}</span>
     </div>
-    <button class="nav-logout" (click)="logout()" title="Switch user">↩</button>
+
+    <!-- dark mode toggle -->
+    <button class="nav-icon-btn" (click)="toggleTheme()"
+      [title]="isDark ? 'Switch to light mode' : 'Switch to dark mode'">
+      {{ isDark ? '☀️' : '🌙' }}
+    </button>
+
+    <!-- logout -->
+    <button class="nav-icon-btn" (click)="logout()" title="Switch user">↩</button>
   </nav>
 }
 

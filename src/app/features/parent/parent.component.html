@@ -1,15 +1,19 @@
 <div class="parent-page">
   <!-- Header -->
-  <div class="parent-header">
-    <div class="header-left">
-      <h2>👨‍👩‍👦 Parent Dashboard</h2>
-    </div>
-    <div class="header-right">
-      <button class="icon-btn" (click)="goSettings()" title="Settings">⚙️</button>
-      <button class="icon-btn" (click)="openChangePIN()" title="Change PIN">🔑</button>
-      <button class="icon-btn" (click)="logout()" title="Logout">↩</button>
-    </div>
+ <div class="parent-header">
+  <div class="header-left">
+    <h2>👨‍👩‍👦 Parent Dashboard</h2>
   </div>
+  <div class="header-right">
+    <button class="icon-btn" (click)="theme.toggle()"
+      [title]="theme.isDark() ? 'Light mode' : 'Dark mode'">
+      {{ theme.isDark() ? '☀️' : '🌙' }}
+    </button>
+    <button class="icon-btn" (click)="goSettings()" title="Settings">⚙️</button>
+    <button class="icon-btn" (click)="openChangePIN()" title="Change PIN">🔑</button>
+    <button class="icon-btn" (click)="logout()" title="Logout">↩</button>
+  </div>
+</div>
   <!-- Child selector tabs -->
   <div class="child-tabs">
     @for (child of children(); track child.id) {

@@ -5,6 +5,7 @@ import { DbService } from '../../core/db.service';
 import { AuthService } from '../../core/auth.service';
 import { ChildProfile, Session, SECTIONS, DRILL_LABELS,
          DrillType, AVATARS, buildInitialProgress } from '../../core/models';
+import { ThemeService } from '../../core/theme.service';
 
 @Component({
   selector: 'app-parent',
@@ -37,6 +38,7 @@ export class ParentComponent implements OnInit {
     private db:   DbService,
     private auth: AuthService,
     private router: Router,
+    public  theme:  ThemeService,
   ) {}
 
   async ngOnInit() {
